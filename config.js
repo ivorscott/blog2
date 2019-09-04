@@ -28,8 +28,8 @@ module.exports = {
       Iterating through customer feedback to achieve product-market-fit.`,
     contacts: {
       email: "ivor@devpie.io",
-      twitter: "https://twitter.com/ivorsco77",
-      github: "https://github.com/ivorscott"
+      twitter: "ivorsco77",
+      github: "ivorscott"
     }
   }
 };
