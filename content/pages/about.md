@@ -1,7 +1,7 @@
 ---
 template: page
 title: About me
-slug: /about
+slug: /pages/about
 draft: false
 ---
 Full stack developer
