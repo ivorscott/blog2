@@ -17,4 +17,4 @@ tags:
 ---
 ## Intro
 
-Docker in development has proven to work exceptionally well for me because I can automate my own environments and isolate them from each other. Lately, I've been interested in migrating APIs from Node to Go. With Node, I finally stumbled upon the ultimate workflow, but a real problem I had was achieving a similar one with Go. This post illustrates the use of docker compose to automate live reloading a Go api on code changes, debugging it with breakpoints and running tests.
+Docker in development has proven to work exceptionally well for me because I can automate my own environments and isolate them from each other. Lately, I've been interested in migrating APIs from Node to Go. With Node, I finally stumbled upon the ultimate workflow, but a real problem I had was achieving a similar one with Go. This post illustrates the use of docker compose to automate live reloading a Go API on code changes, debugging it with breakpoints and running tests.
