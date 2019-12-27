@@ -12,4 +12,14 @@ category: Security
 tags:
   - auth0 go react authorization authentication
 ---
-Outline
+## Intro
+
+What you need to know to secure your backends and frontends with Auth0. In this blog post, you will learn how to setup a Auth0 connected go API and typescript react app. Authentication as well as Authorization is discussed.
+
+Auth0
+
+Go
+
+React
+
+Conclusion
