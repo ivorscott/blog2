@@ -1,7 +1,7 @@
 ---
 template: post
-title: 'Using Auth0, Go and React'
-slug: secure-apps
+title: Securing apps with Auth0 using Go and React
+slug: securing-apps-with-auth0-using-go-and-react
 draft: true
 date: 2019-12-15T18:50:25.101Z
 description: >-
