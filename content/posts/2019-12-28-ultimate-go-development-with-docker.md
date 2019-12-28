@@ -21,13 +21,15 @@ Docker
 
 VSCode
 
+Hadolint
+
 Project starter
 
 Multi-stage Builds 
 
-Hadolint & Trivy
-
 Docker Compose
+
+Traefik
 
 Live Reload
 
