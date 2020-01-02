@@ -4,12 +4,17 @@ title: About me
 slug: /pages/about
 draft: false
 ---
-I am a self-motivated full stack developer with two Fine Arts degrees leveraging my creativity in software. I communicate effectively and learn quick. I develop strong working relationships with others and enjoy what I do.
+I'm a full stack developer with two fine arts degrees, currently, an official [Traefik Ambassador](https://info.containo.us/traefik-ambassador-program) and Docker advocate. I'm always learning something new (currently golang and K8s).
 
 ### Where I've Worked
 
 Mass Mutual Financial Group, Siemens
 
-### Things I Use
+### Things I Like
 
-D3 AWS SCSS Jest React NodeJs Docker MongoDB Postgres Flexbox Cypress GraphQL GatsbyJs Wordpress Golang JavaScript TypeScript Firebase Digital Ocean Docker Swarm Kubernetes
+Design: Sketch, Invision, Balsamiq
+
+Development: Golang, TypeScript, React, GatsbyJS, D3, Jest, NodeJS, MongoDB, Postgres, Postman, CSS-in-JS 
+
+Deployment: Docker, Traefik, AWS, Digital Ocean, Docker Swarm, Kubernetes, Contentful, Netlify
+ 
