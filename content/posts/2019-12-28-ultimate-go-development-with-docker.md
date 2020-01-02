@@ -17,24 +17,26 @@ tags:
 
 Lately, I've been interested in migrating APIs from Node to Go. With Node, I had the ultimate workflow, but I had a problem achieving a similar one with Go. This post illustrates the use of docker compose to automate live reloading a Go API on code changes, debugging it with breakpoints and running tests.
 
-Docker
+Warning: For the most part this tutorial is IDE agnostic except for the last section on debugging with VSCode.
 
-VSCode
+### Docker
 
-Hadolint
+### Project starter
 
-Project starter
+### Multi-stage Builds 
 
-Multi-stage Builds 
+### Docker Compose
 
-Docker Compose
+### Live Reload
 
-Traefik
+### Traefik
 
-Live Reload
+### Setting up Postgres
 
-Debugging
+### Running Tests
 
-Testing
+### Debugging with VSCode
 
-Conclusion
+** If you're planning on using VSCode, I recommended installing [Hadolint's VSCode intergation](https://marketplace.visualstudio.com/items?itemName=exiasr.hadolint), it will keep you from adopting bad practices in your Dockerfiles. There's also [integrations for Vim](https://github.com/hadolint/hadolint/blob/master/docs/INTEGRATION.md#vim-and-neovim).
+
+### Conclusion
