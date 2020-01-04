@@ -1,6 +1,6 @@
 ---
 template: post
-title: Ultimate Go Development with Docker & Traefik
+title: The Ultimate Go Development Setup with Docker
 slug: ultimate-go-development-with-docker
 draft: true
 date: 2019-12-27T20:51:27.221Z
@@ -11,30 +11,72 @@ description: >-
   a Go API on code changes, debugging it with breakpoints and running tests.
 category: development
 tags:
-  - docker golang delve reload
+  - Docker Golang Traefik Postgres VSCode Delve
 ---
+## 
+
+![](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
+
 ## Why I'm writing this
 
-Since I started deploying apps to the cloud and leveraging multiple tools like Docker, Portainer, Traefik and Drone, I have been forced to recognize that many of my beloved infrastructure tools use Go. It seemed as if every where I turned I was using some open source go library in my day to day deployment workflow.
+Ever since I started deploying apps, leveraging tools like [Docker](https://docs.docker.com/get-started/), [Portainer](https://portainer.io), [Traefik](https://traefik.io) and [Drone](https://drone.io), I have been forced to recognize that many of my beloved infrastructure tools use the Golang programming language. Everywhere I would turn, I was using an open source Go library in my day to day workflow. So I did what anyone would do -- I learned some Go.
 
-Coming from NodeJS, I first struggled to achieve my old workflow in Go, which mostly consisted of live reloading and debugging an api in VSCode.
+It wasn't easy. Being a full stack developer, I immediately wanted things to work like my old workflow in JavaScript. In the past, I could rely on live reloading and debugging in VSCode, but it wasn't obvious how to do so in Go.
 
-<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Hey <a href="https://twitter.com/hashtag/Gophers?src=hash&amp;ref_src=twsrc%5Etfw">#Gophers</a>, I&#39;m using VSCode and Docker. I want to live reload a go api and use the debugger.<br><br>Here’s what I have so far: <a href="https://t.co/ybH86LYGU4">https://t.co/ybH86LYGU4</a><br><br>Whenever I tried combining both approaches in one container I had issues. Has anyone done this? I&#39;m super close. <a href="https://twitter.com/hashtag/golang?src=hash&amp;ref_src=twsrc%5Etfw">#golang</a> <a href="https://twitter.com/hashtag/docker?src=hash&amp;ref_src=twsrc%5Etfw">#docker</a></p>&mdash; Ivor Scott (@ivorsco77) <a href="https://twitter.com/ivorsco77/status/1206624510306390016?ref_src=twsrc%5Etfw">December 16, 2019</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+As of this writing, I have yet to find a way to live reload a Go api and delve debug it at the same time, in the same container.
 
-Unfortunately, I wasn't able to find a way to live reload a go api and debug it at the same time, in the same container. So if you are reading this and have any insights on this I would love to hear from you.
-
-I ended up settling with live reloading an api in one container and then on the fly, or when I needed to, launching a debuggable api in a separate container without live reload. This seemed to be a good compromise because I'm usually only debugging when I know I have a problem. At that point, I can simply launch another container to investigate.
+I ended up settling with live reloading a Go api in one container and then when needed, launching a debuggable version of the same api in a separate container, without live reload. This seemed to be a good compromise because I'm usually not debugging until I know I have a problem. At that point, I can simply launch another container to investigate.
 
 ## The Goal
 
-We will start with a completed sample api to focus our attention on building tooling around it to support Docker, docker-compose, multi-stage builds, live reloading, Traefik, Postgres, testing and debugging.
+We will start with a ready made full stack project. I don't want to teach you how to make a react app or a go api, rather we will focus our attention on building tooling around this full stack project in order to support the ultimate Go development environment with Docker. More specifically, we'll cover using multi-stage builds, docker-compose, live reloading, Traefik, Postgres, testing and debugging with delve locally.
 
-> **Note:** \
-> **The majority of this tutorial is IDE agnostic except for the last section on _Debugging With VSCode_.**
+### Getting Started
+
+This tutorial comes with source code. You can either go straight to my [master branch](https://github.com/ivorscott/go-delve-reload/tree/master) and try the completed version for yourself or follow along with the project starter, available under the [starter branch](https://github.com/ivorscott/go-delve-reload/tree/starter).
+
+### Setting Up VSCode
+
+I considered making this tutorial IDE agnostic but there are a few amazing VSCode extensions I'd like to share and the last section fully embraces debugging with VSCode. That being said, you don't need any of these extensions I am about to mention, nor do you need to use the delve debugger, but I highly recommend it. 
+
+Download VSCode if you haven't already (its free). Then install the following extensions:
+
+1. The Go extension
+
+explain in 1-2 sentences
+
+1. The Docker extension
+
+explain in 1-2 sentences
+
+1. The hadolint extension
+
+explain in 1-2 sentences
+
+Create a `launch.json` file under the `./vscode` folder with the following contents:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch remote",
+      "type": "go",
+      "request": "attach",
+      "mode": "remote",
+      "cwd": "${workspaceFolder}/api",
+      "remotePath": "/api",
+      "port": 2345,
+      "showLog": true,
+      "trace": "verbose"
+    }
+  ]
+}
+```
 
 ### Docker
 
-### Project Starter
+### Multi-stage Builds
 
 ### Multi-stage Builds
 
