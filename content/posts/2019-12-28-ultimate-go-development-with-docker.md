@@ -247,18 +247,148 @@ EXPOSE 4000 8888 2345
 FROM base as prod
 ```
 
-
-
 ### Creating the React app Dockerfile
 
 The client Dockerfile is a complete multi-stage Dockerfile that I have used previously for developing, testing and deploying react apps. It's a bit more complicated so let's dive in.
 
+First we need to determine which base image we would like to extend from our `base` stage.
 
+```
+FROM node:10.15.0-alpine as base
+```
+
+I have gone ahead and specified the node:10.15.0-apline image. Apline image are incredible small and lightweight. The lighter the image the better.
+
+**Note:** Alpine images are so light weight, they remove some parts required for image scanning tools to detect vulnerabilities. We won't be including any image scanning tools in this tutorial but It's worth mentioning that such a thing exists. 
+
+Lets's add some meta data to the client Dockerfile just like before:
+
+```
+LABEL maintainer="FIRSTNAME LASTNAME <YOUR@EMAIL.HERE>"
+```
+
+Will start consider the production environment early on. Use the ENV command to set NODE_ENV to production
+
+```
+ENV NODE_ENV=production
+```
+
+Change the working directory to where the react app will live.
+
+```
+WORKDIR /client
+```
+
+Copy over the package.json and package.lock files. This way if the packages changes we are certain to re-install production dependencies on the next rebuild when the cache busts.
+
+```
+COPY package*.json ./
+```
+
+Next install only the production dependencies and clean up after.
+
+```
+RUN npm ci \ 
+    && npm cache clean --force
+```
+
+Create a new `dev` stage and set the `NODE_ENV` environment variable to development. Ensure to also include an updated PATH environment variable so that the container knows where to look for node_modules.
+
+```
+FROM base as dev
+ENV NODE_ENV=development
+
+ENV PATH /client/node_modules/.bin:$PATH
+```
+
+Create some meta data to remember to `EXPOSE` port 3000, the default create-react-app port.
+
+```
+EXPOSE 3000
+```
+
+
+
+```
+RUN mkdir /client/app && chown -R node:node .
+```
+
+
+
+```
+USER node
+RUN npm i --only=development \
+    && npm cache clean --force
+```
+
+
+
+```
+COPY patch.js /client/node_modules/react-dev-utils/webpackHotDevClient.js
+```
+
+
+
+```
+RUN npm config list
+```
+
+
+
+```
+WORKDIR /client/app
+```
+
+
+
+```
+CMD ["npm", "run", "start"]
+```
+
+
+
+
+
+```
+FROM dev as test
+COPY . .
+RUN npm audit
+```
+
+
+
+```
+FROM test as build-stage
+RUN npm run build
+```
+
+
+
+```
+FROM nginx:1.15-alpine as prod
+```
+
+
+
+```
+EXPOSE 80
+```
+
+
+
+```
+COPY --from=build-stage /client/app/build /usr/share/nginx/html
+COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
+```
+
+
+
+The final client Dockerfile should look something like this:
 
 ```
 FROM node:10.15.0-alpine as base
 
-LABEL maintainer="FIRSTNAME LASTNAME <YOUR@EMAIL.HERE>"
+LABEL maintainer="Ivor Scott <ivor@devpie.io>"
 
 ENV NODE_ENV=production
 
@@ -301,11 +431,11 @@ COPY --from=build-stage /client/app/build /usr/share/nginx/html
 COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 ```
 
-\[Explain Each Line]
+
 
 ### Demo
 
-\[Build image manually and run it as a containers. Without docker-compose]
+
 
 ## Docker Compose
 
