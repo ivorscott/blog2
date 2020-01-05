@@ -41,17 +41,9 @@ I considered making this tutorial IDE agnostic but there are a few amazing VSCod
 
 Download VSCode if you haven't already (its free). Then install the following extensions:
 
-1. [The Go extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go)
-
-Comes with 
-
-1. [The Docker extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)
-
-Provides 
-
-1. [The hadolint extension](https://marketplace.visualstudio.com/items?itemName=exiasr.hadolint) 
-
-Lints your Dockerfile to prevent you from adopting bad practices.
+1. [The Go extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) adds rich language support for the Go language to VSCode.
+2. [The Docker extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) adds syntax highlighting,commands, hovertips, and linting for Dockerfile and docker-compose files.
+3. [The hadolint extension](https://marketplace.visualstudio.com/items?itemName=exiasr.hadolint) also lints your Dockerfiles. It's my go to linter for creating best practice docker images.
 
 Create a `launch.json` file under the `./vscode` folder with the following content:
 
@@ -74,42 +66,181 @@ Create a `launch.json` file under the `./vscode` folder with the following conte
 }
 ```
 
-explain in 1-2 sentences
+This will help VSCode remotely attach to the delve debugger inside the container. This will change the look of the debug tab in VSCode, providing you with a "Launch remote" debugging button that you can use to debug any breakpoints you have set. More on this in the last section but the Debug tab should look like this:
 
 ![debug-tab](/media/screen-shot-2020-01-05-at-02.33.20.png "Debug tab in VSCode")
 
-\=
+Adding the Docker extension also changes the look and feel of the VSCode editor. A new Docker tab should be visible, giving us easy access to manage containers, images, registries, networks and volumes. This prevents us from using the terminal to execute the docker commands that would give us the same results. The new Docker tab should look like this:
 
 ![docker-tab](/media/screen-shot-2020-01-05-at-02.33.00.png "Docker tab in VSCode")
 
-## What is Docker?
+## What is Docker anyway?
 
 Docker allows you to package your app and host it on any operating system. No more, "It works on my machine". Docker supports the software lifecycle from development to production. With Docker, software delivery doesn't have to be painful and unpredictable. If you're working in a team. It's useful for operators, system admins, build engineers and developers. Docker's core belief is that it's possible to deliver software fast and in a predictable fashion. 
 
 ![use-docker](/media/screen-shot-2020-01-05-at-13.38.25.png "It works on my machine (Slap) --Use Docker!")
 
+### 3 Docker Concepts
 
+### 1. Docker Images
 
-### 3 Essential Concepts
+Imagine packaging all your application's binaries and dependencies, meta data included, into a single object, that what a docker image is. It's the source of truth for your app. A docker image is not a virtual machine. There's no Kernel, just the application binaries, meaning you'r not working with a complete operating system you are still leveraging your host machine kernel. So in result your apps consume less resources are are much lighter than a Virtual machine. So it's possible to have hundreds on containers on your machine which wouldn't be possible with VMs.
 
-### 1. The Dockerfile
+### 2. The Dockerfile
 
-### 2. Docker Images
+We still need a recipe to create our personal Docker images, that's where the Dockerfile comes in. In a top down fashion you are actually provide the instructions of how you want to build your image. In the next section, you will see that Dockerfiles actually have their own language to do this.
 
 ### 3. Containers
 
-## Creating the Dockerfiles
+If a Dockerfile is the recipe for a Docker Image, and A Docker Image is the packaged application binaries and dependencies, then a container can be thought of as the running app instance of a particular Docker Image. Later we will use docker-compose to manage our many containers needed for a full stack development project.
 
-## GNU Make and Docker Compose
+## Creating the Go API Dockerfile
+
+```
+FROM golang:1.13 as base
+
+LABEL maintainer="FIRSTNAME LASTNAME <YOUR@EMAIL.HERE>"
+
+WORKDIR /api
+
+COPY . .
+
+RUN go mod download
+
+# Development
+FROM base as dev
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+
+WORKDIR $GOPATH/src
+
+RUN go get github.com/go-delve/delve/cmd/dlv
+RUN go get github.com/githubnemo/CompileDaemon
+
+WORKDIR /api
+
+EXPOSE 4000 8888 2345
+
+# Production
+FROM base as prod
+```
+[Explain Each Line]
+
+[Demo early. Build image and run as a container. Without docker-compose]
+
+## Creating the React app Dockerfile
+
+```
+FROM node:10.15.0-alpine as base
+
+LABEL maintainer="FIRSTNAME LASTNAME <YOUR@EMAIL.HERE>"
+
+ENV NODE_ENV=production
+
+# create a parent directory for the app
+WORKDIR /client
+
+# copy the package.json and lock files
+COPY package*.json ./
+
+# install production dependencies & clean up after
+RUN npm ci \ 
+    && npm cache clean --force
+
+FROM base as dev
+ENV NODE_ENV=development
+
+# set node_module executables (*/.bin) inside path 
+ENV PATH /client/node_modules/.bin:$PATH
+
+# expose default create-react-app port
+EXPOSE 3000
+
+# make app directory and update permissions to use node user
+RUN mkdir /client/app && chown -R node:node .
+
+# change user to node user (otherwise we are always root in the container)
+USER node
+RUN npm i --only=development \
+    && npm cache clean --force
+
+# Patch create-react-app bug preventing self-signed certificate usage
+# https://github.com/facebook/create-react-app/issues/8075
+COPY patch.js /client/node_modules/react-dev-utils/webpackHotDevClient.js
+
+# log npm config (for debugging)
+RUN npm config list
+WORKDIR /client/app
+CMD ["npm", "run", "start"]
+
+FROM dev as test
+COPY . .
+RUN npm audit
+
+FROM test as build-stage
+RUN npm run build
+
+FROM nginx:1.15-alpine as prod
+EXPOSE 80
+COPY --from=build-stage /client/app/build /usr/share/nginx/html
+COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
+```
+[Explain Each Line]
+
+[Demo early. Build images manually and run them as a containers. Without docker-compose]
+
+## Docker Compose
+
+[Description]
+
+[Create file. piece by piece. leave out traefik. leave out debug api. leave out pgadmin]
+
+[Demo]
+
+## Makefiles
+
+[Description]
+
+[Create file to abstract out docker-compose commands]
+
+[Demo. Show everything still works]
 
 ## Live Reloading The API
 
+[Add CompileDaemon to docker-compose.yml]
+
+[Demo]
+
 ## Self-signed certificates with Traefik
 
-## Setting Up Postgres
+[Description]
+
+[Add Traefik to docker-compose.yml]
+
+[Demo]
+
+## Improving The Postgres Workflow
+
+[Add pgadmin to docker-compose.yml]
+
+[Add command to makefile]
+
+[Demo]
 
 ## Running Tests
 
+[Add commands to makefile to test frontend and backend]
+
 ## Debugging With VSCode
 
+[Add debug-api to docker-compose.yml]
+
+[Add command to makefile]
+
+[Demo]
+
 ## Conclusion
+
+[Recap. What makes this the ultimate setup. What to take away.]
+[Feel free to reach me via email or twitter] Happy coding.
