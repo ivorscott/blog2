@@ -43,15 +43,15 @@ Download VSCode if you haven't already (its free). Then install the following ex
 
 1. [The Go extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go)
 
-explain in 1-2 sentences
+Comes with 
 
 1. [The Docker extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)
 
-explain in 1-2 sentences
+Provides 
 
-1. [The hadolint extension](https://marketplace.visualstudio.com/items?itemName=exiasr.hadolint)
+1. [The hadolint extension](https://marketplace.visualstudio.com/items?itemName=exiasr.hadolint) 
 
-explain in 1-2 sentences
+Lints your Dockerfile to prevent you from adopting bad practices.
 
 Create a `launch.json` file under the `./vscode` folder with the following content:
 
@@ -78,13 +78,17 @@ explain in 1-2 sentences
 
 ![debug-tab](/media/screen-shot-2020-01-05-at-02.33.20.png "Debug tab in VSCode")
 
-=
+\=
 
 ![docker-tab](/media/screen-shot-2020-01-05-at-02.33.00.png "Docker tab in VSCode")
 
 ## What is Docker?
 
-Docker is
+Docker allows you to package your app and host it on any operating system. No more, "It works on my machine". Docker supports the software lifecycle from development to production. With Docker, software delivery doesn't have to be painful and unpredictable. If you're working in a team. It's useful for operators, system admins, build engineers and developers. Docker's core belief is that it's possible to deliver software fast and in a predictable fashion. 
+
+![use-docker](/media/screen-shot-2020-01-05-at-13.38.25.png "It works on my machine (Slap) --Use Docker!")
+
+
 
 ### 3 Essential Concepts
 
@@ -107,7 +111,5 @@ Docker is
 ## Running Tests
 
 ## Debugging With VSCode
-
-
 
 ## Conclusion
