@@ -82,25 +82,17 @@ explain in 1-2 sentences
 
 ![docker-tab](/media/screen-shot-2020-01-05-at-02.33.00.png "Docker tab in VSCode")
 
-## Docker
+## What is Docker?
 
 Docker is
 
-### 7 Essential Concepts
+### 3 Essential Concepts
 
 ### 1. The Dockerfile
 
 ### 2. Docker Images
 
 ### 3. Containers
-
-### 4. Container Labels
-
-### 5. Data Persistence: Volumes & Bind mounts
-
-### 6. Networks
-
-### 7. Secrets
 
 ## Creating the Dockerfiles
 
