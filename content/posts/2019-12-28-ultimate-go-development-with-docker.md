@@ -11,11 +11,11 @@ description: >-
   a Go API on code changes, debugging it with breakpoints and running tests.
 category: development
 tags:
-  - Docker Golang Traefik Postgres VSCode Delve
+  - Delve Docker Golang Makefile Postgres Traefik VSCode
 ---
 ## 
 
-![](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
+![ultimate-go-development-with-docker](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg "The Ultimate Go Development Setup with Docker")
 
 ## Why I'm writing this
 
@@ -31,29 +31,29 @@ I ended up settling with live reloading a Go api in one container and then when 
 
 We will start with a ready made full stack project. I don't want to teach you how to make a react app or a go api, rather we will focus our attention on building tooling around this full stack project in order to support the ultimate Go development environment with Docker. More specifically, we'll cover using multi-stage builds, docker-compose, live reloading, Traefik, Postgres, testing and debugging with delve locally.
 
-### Getting Started
+## Getting Started
 
 This tutorial comes with source code. You can either go straight to my [master branch](https://github.com/ivorscott/go-delve-reload/tree/master) and try the completed version for yourself or follow along with the project starter, available under the [starter branch](https://github.com/ivorscott/go-delve-reload/tree/starter).
 
-### Setting Up VSCode
+## Setting Up VSCode
 
 I considered making this tutorial IDE agnostic but there are a few amazing VSCode extensions I'd like to share and the last section fully embraces debugging with VSCode. That being said, you don't need any of these extensions I am about to mention, nor do you need to use the delve debugger, but I highly recommend it. 
 
 Download VSCode if you haven't already (its free). Then install the following extensions:
 
-1. The Go extension
+1. [The Go extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go)
 
 explain in 1-2 sentences
 
-1. The Docker extension
+1. [The Docker extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)
 
 explain in 1-2 sentences
 
-1. The hadolint extension
+1. [The hadolint extension](https://marketplace.visualstudio.com/items?itemName=exiasr.hadolint)
 
 explain in 1-2 sentences
 
-Create a `launch.json` file under the `./vscode` folder with the following contents:
+Create a `launch.json` file under the `./vscode` folder with the following content:
 
 ```json
 {
@@ -74,22 +74,48 @@ Create a `launch.json` file under the `./vscode` folder with the following conte
 }
 ```
 
-### Docker
+explain in 1-2 sentences
 
-### Multi-stage Builds
+![debug-tab](/media/screen-shot-2020-01-05-at-02.33.20.png "Debug tab in VSCode")
 
-### Multi-stage Builds
+=
 
-### Docker Compose
+![docker-tab](/media/screen-shot-2020-01-05-at-02.33.00.png "Docker tab in VSCode")
 
-### Live Reload
+## Docker
 
-### Traefik
+Docker is
 
-### Setting Up Postgres
+### 7 Essential Concepts
 
-### Running Tests
+### 1. The Dockerfile
 
-### Debugging With VSCode
+### 2. Docker Images
 
-### Conclusion
+### 3. Containers
+
+### 4. Container Labels
+
+### 5. Data Persistence: Volumes & Bind mounts
+
+### 6. Networks
+
+### 7. Secrets
+
+## Creating the Dockerfiles
+
+## GNU Make and Docker Compose
+
+## Live Reloading The API
+
+## Self-signed certificates with Traefik
+
+## Setting Up Postgres
+
+## Running Tests
+
+## Debugging With VSCode
+
+
+
+## Conclusion
