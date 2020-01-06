@@ -1,6 +1,6 @@
 ---
 template: post
-title: The Ultimate Go Development Setup with Docker
+title: The Ultimate Go and React Development Setup with Docker
 slug: ultimate-go-development-with-docker
 draft: true
 date: 2019-12-27T20:51:27.221Z
@@ -202,17 +202,7 @@ EXPOSE 4000 8888 2345
 FROM base as prod
 ```
 
-### Demo
-
-```
-docker build --target dev --tag reload/api ./api/Dockerfile
-```
-
-The above command builds the Dockerfile creating a docker image we can use to create a container. Notice the use of two flags follow by the path to the Dockerfile. The first flag from the left: `--target` specifies that we only want to target the `dev` stage in the multi-stage setup. The second flag: --tag specifies a name for your new image. If you were to publish the image to the official docker hub repository as a private or public image the format Dockerhub understand is username/image-name. Since we are not publishing to Dockerhub whether or not I have a username called `reload` doesn't matter here.
-
-At this point we are still missing the Postgres database. Let's go over the client Dockerfile before attempting to run the image as a container.
-
-By now, your Dockerfile should look similar to this:
+By now, your api Dockerfile should look similar to this:
 
 ```
 FROM golang:1.13.5 as base
@@ -241,11 +231,23 @@ WORKDIR /api
 # port 4000 -> api port
 # port 8888 -> debuggable api port
 # port 2345 -> debugger port
-EXPOSE 4000 8888 2345
+EXPOSE 4000 8888 2345FROM dev as testRUN go test -v ./...
 
 # Production
 FROM base as prod
 ```
+
+### Demo
+
+```
+docker build --target dev --tag reload/api ./api
+```
+
+The above command builds the Dockerfile creating a docker image we can use to create a container. Notice the use of two flags followed by the path to the directory where the Dockerfile lives, also known as the build context. The first flag from the left: `--target` specifies that we only want to target the `dev` stage in the multi-stage setup. The second flag: --tag specifies a name for your new image. If you were to publish the image to the official docker hub repository as a private or public image the format Dockerhub understand is username/image-name. Since we are not publishing to Dockerhub whether or not I have a username called `reload` doesn't matter here. 
+
+The terminal output of the image build should show each step, or image layer, followed by a successful message at the end. 
+
+At this point we are still missing the Postgres database. Let's go over the client Dockerfile before attempting to run the image as a container.
 
 ### Creating the React app Dockerfile
 
@@ -307,81 +309,83 @@ Create some meta data to remember to `EXPOSE` port 3000, the default create-reac
 EXPOSE 3000
 ```
 
+During development we usually mirror the files on the host machine inside the container. We will be doing this later with the go api too so that we can make a change in the code editor and see those changes reflected in the container. 
 
+A common issue is with node modules is that, some modules like node-gyp, are  installed specifically for the host machine architecture. This mean if your working on a mac or windows machine. The node_modules can result in completely different binaries then the linux node_modules in the container. 
+
+One solution is to never run npm install on the host machine. However, this is a bit annoying. While doing that works, VSCode will show errors on node_module imports because it can't find the node_modules on the host machine and doesn't know how to look inside the container to find the node_modules. 
+
+To prevent these issues, there's a clever trick that involved hiding the host machines node modules from the container and installing the node_modules in a parent directory inside the container. This will make more sense when we start defining the docker-compose.yml file. 
+
+Create a `RUN` command that creates an app directory where the react app src code will live and recursively change  everything inside the client directory to be owned by the node user with is much safer that being root which is the default.
 
 ```
 RUN mkdir /client/app && chown -R node:node .
 ```
 
-
+Now switch to the node user.
 
 ```
 USER node
+```
+
+We already installed the production dependency in the client directory. Now we will Install the development dependencies since we are in the `dev` stage. Don't forget to clean up the cache after.
+
+```
 RUN npm i --only=development \
     && npm cache clean --force
 ```
 
-
+As of January 6th, 2020, create-react-app has a [bug](https://github.com/facebook/create-react-app/issues/8075) preventing the usage of self-sign certificates which you will apply later with Traefik. So the next step shouldn't be required, it just a hot fix. Apparently, there's already a fix for this pending but its not yet available in a fresh install of create-react-app. Anyhow, this is a great example of how Docker can remove the many obstacles that occasionally pop up in the software lifecycle.
 
 ```
 COPY patch.js /client/node_modules/react-dev-utils/webpackHotDevClient.js
 ```
 
-
+The next line is for debugging purposes only. When something goes wrong it may be nice to see the npm configuration your app is using.
 
 ```
 RUN npm config list
 ```
 
+Before we go to the next line. Please take note that the node_modules are inside the client directory not inside the app directory we are about to create. Later in your docker-compose.yml file, you will hide the host machine's node_modules from the container, causing node to traverse up the folder hierarchy until it finds the node_modules we placed in the client directory. That's the trick to prevent node_modules issues in Docker during development.
 
+Let's continue. Create an `app` directory under the `client` directory and start the react app.
 
 ```
 WORKDIR /client/app
-```
-
-
-
-```
 CMD ["npm", "run", "start"]
 ```
 
-
-
-
+Our multi-stage setup wouldn't be complete without a test stage. Base it off of the `dev` stage with already contains all the production and dev dependencies. Then run some tests.
 
 ```
 FROM dev as test
 COPY . .
-RUN npm audit
+RUN npm auditRUN npm test
 ```
 
+Here, `npm audit` will look for node_modules vulnerabilities. The build will fail if the process exits early. `npm test` runs the react app tests.
 
+You are almost done with this Dockerfile. Next you want to execute the production build. Give you self and additional stage called `build-stage`. Then execute the build. 
 
 ```
 FROM test as build-stage
 RUN npm run build
 ```
 
-
-
-```
-FROM nginx:1.15-alpine as prod
-```
-
-
+Set up a new production stage named `prod` based off the nginx web server which will serve  the static assets from the build and provide some meta data to remind the reader to `EXPOSE` port 80, which is nginx's default port.
 
 ```
-EXPOSE 80
+FROM nginx:1.15-alpine as prodEXPOSE 80
 ```
 
-
+The last thing to do is to grab the nginx configuration from the project and only the built assets from the build-stage, leaving everything else behind, making the production image as small as possible.
 
 ```
 COPY --from=build-stage /client/app/build /usr/share/nginx/html
 COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 ```
-
-
 
 The final client Dockerfile should look something like this:
 
@@ -431,19 +435,226 @@ COPY --from=build-stage /client/app/build /usr/share/nginx/html
 COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 ```
 
-
-
 ### Demo
 
-
+```
+docker build --target dev --tag reload/client ./clientdocker build --target test --tag reload/client-test ./clientdocker build --target prod --tag reload/client-prod ./client
+```
 
 ## Docker Compose
 
-\[Description]
+Docker compose is a command line tools and configuration file. It uses YAML. It helps you a bunch on containers that have relationships with one another. It's worth noting that docker-compose is meant for local development and test automation. Its not a production grade tool. For production you are better off using a production grade orchestrator like Docker Swarm or Kubernetes.
 
-\[Create file. piece by piece. leave out traefik. leave out debug api. leave out pgadmin]
+Create a docker-compose.yml file in the project root and open it up in your editor.
+
+```
+touch docker-compose.yml        
+```
+
+By the end of this tutorial we will have composed 6 containers. Let's accomplish this first 3 needed to see something working in the browser. We will go line by line. The first line in a compose file is the version number.
+
+```
+version: "3.7"
+```
+
+Different versions support different features.
+
+To add containers to the docker-compose.yml file you first declare the `services:` key and then a list of containers beneath it. The configuration for each container goes immediately after it. 
+
+```
+version: "3.7"
+services:  
+  api:    
+    # api config ...
+  client:        
+    #  client config...  
+  db:    
+    # db config...
+```
+
+Begin with the api container.
+
+```
+  api:
+    build:
+      context: ./api
+      target: dev
+    secrets:
+      - postgres_db
+      - postgres_host
+      - postgres_user
+      - postgres_passwd
+    environment:
+      ADDR_PORT: 4000
+      POSTGRES_HOST: /run/secrets/postgres_host
+      POSTGRES_DB: /run/secrets/postgres_db
+      POSTGRES_USER: /run/secrets/postgres_user
+      POSTGRES_PASSWORD: /run/secrets/postgres_passwd
+    volumes:
+      - ./api:/api
+    networks:
+      - postgres
+      - traefik-public
+```
+
+Next comes the client container.
+
+```
+  client:
+    build:
+      context: ./client
+      target: dev
+    ports:
+      - 3000:3000
+    volumes:
+      - ./client:/client/app
+      - /client/app/node_modules
+    networks:
+      - traefik-public
+```
+
+The Go api needs to communicate with a Postgres database. Create a container for that as well. 
+
+```
+  db:
+    image: postgres:11.6
+    container_name: db
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_passwd
+    environment:
+      POSTGRES_DB_FILE: /run/secrets/postgres_db
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_passwd
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./api/scripts/:/docker-entrypoint-initdb.d/
+    networks:
+      - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
+
+At the very bottom of the file we need to create the volumes, networks and secrets need by the containers.
+
+```
+volumes:
+  postgres:
+
+networks:
+  postgres:
+    external: true
+  traefik-public:
+    external: true
+
+secrets:
+  postgres_db:
+    file: ./secrets/postgres_db
+  postgres_host:
+    file: ./secrets/postgres_host
+  postgres_passwd:
+    file: ./secrets/postgres_passwd
+  postgres_user:
+    file: ./secrets/postgres_user
+```
+
+Your docker-compose.yml file should now look like this:
+
+```
+version: "3.7"
+services:
+  api:
+    build:
+      context: ./api
+      target: dev
+    secrets:
+      - postgres_db
+      - postgres_host
+      - postgres_user
+      - postgres_passwd
+    environment:
+      ADDR_PORT: 4000
+      POSTGRES_HOST: /run/secrets/postgres_host
+      POSTGRES_DB: /run/secrets/postgres_db
+      POSTGRES_USER: /run/secrets/postgres_user
+      POSTGRES_PASSWORD: /run/secrets/postgres_passwd
+    volumes:
+      - ./api:/api
+    networks:
+      - postgres
+      - traefik-public
+
+  client:
+    build:
+      context: ./client
+      target: dev
+    ports:
+      - 3000:3000
+    volumes:
+      - ./client:/client/app
+      - /client/app/node_modules
+    networks:
+      - traefik-public
+
+  db:
+    image: postgres:11.6
+    container_name: db
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_passwd
+    environment:
+      POSTGRES_DB_FILE: /run/secrets/postgres_db
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_passwd
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./api/scripts/:/docker-entrypoint-initdb.d/
+    networks:
+      - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres:
+
+networks:
+  postgres:
+    external: true
+  traefik-public:
+    external: true
+
+secrets:
+  postgres_db:
+    file: ./secrets/postgres_db
+  postgres_host:
+    file: ./secrets/postgres_host
+  postgres_passwd:
+    file: ./secrets/postgres_passwd
+  postgres_user:
+    file: ./secrets/postgres_user
+```
 
 ### Demo
+
+```
+docker-compose up
+```
+
+```
+docker-compose down
+```
 
 ## Makefiles
 
