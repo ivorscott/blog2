@@ -730,9 +730,24 @@ Just remember it's only necessary to use ```.PHONY: target``` when there is a fi
 
 Alright, that's it for makefiles. You can read more about PHONY Targets [here](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html). In this tutorial project you won't need them but you should be aware of them and how they work.
 
-### Demo
+## Creating The Project Makefile
 
-Create the following makefile in the project root.
+Create a ```makefile``` in your project root and open it. 
+
+```
+touch makefile
+```
+
+By default, when you run docker-compose up any networks you define in your docker-compose.yml file will be created for you if they don't externally exist. In our case, we have defined that our networks are external:
+
+```
+networks:
+  postgres:
+    external: true
+```
+This means we still that it is our job to create them. I did this partly for readability and to share a more advanced makefile example with targets and prerequisites. By default, if we let docker-compose create our network by leaving out the ```external: true``` code line. docker-compose would have created a network name called go-delve-reload_postgres, which is essentially the project root directory name and the network name connected with an underscore.
+
+Review the following code.
 
 ```
 #!make
@@ -761,9 +776,39 @@ down:
 	@echo $(SUCCESS)
 ```
 
+Makefile can contain variables. The code above creates a NETWORKS variable by extracting the output of the docker network command.
 
+```shell docker network ls```
 
-\[Demo. Show everything still works]
+The ```shell``` function helps makefiles communicate with the world outside of make and performs the same function that backquotes (‘`’) perform in most shells. In other words, it evaluates the output of the command, this is called command expansion.
+
+With this variable, we test if we have already created the postgres network, if it's equal to a null value aka ```$(null,$(findstring postgres,$(NETWORKS))``` then the network will be created. Notice how the first argument in the outer most parentheses is actually empty and followed by a comma --this is the proper syntax.
+
+```
+ifeq (,$(findstring postgres,$(NETWORKS)))
+	# do something
+endif
+```
+
+The SUCCESS variable is will be rendered in the terminal output. The cryptic code within a string is just the  Unicode character representation of a checkmark. It's only used here to improve the developer experience in the terminal.
+
+Executing the api target with make api will first execute the prerequisite target postgres-network before running additional commands to describe the step in an echo statement and then perform a task with docker-compose, in this case we are starting the api and db containers only.
+
+Since the all target is the first target in the file, executing make in the terminal would produce a similar result but would include the client container as well. Without the @ symbol any command being executed would also be printed in the terminal output. Use the @ symbol when you want to hide the command being run from the terminal output.
+
+### Demo
+
+Run the following command and open http://localhost:3000 in your browser.
+
+```
+make
+```
+
+If you scroll down you will see we are already receiving data from the backend. Now teardown all the containers:
+
+```
+make down
+```
 
 ## Live Reloading The API
 
