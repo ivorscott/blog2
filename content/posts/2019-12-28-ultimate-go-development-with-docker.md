@@ -658,10 +658,12 @@ docker-compose down
 
 ## Makefiles
 
-In development with docker there will be a series of commands you will write to perform some task. Its a hassle to remember all the various commands and even if you know them all it can be annoying to type. GNU Make or Makefiles, are great for abstracting away the commands to shorter memorable names. 
+Working with Docker will require you too know a series of commands: ```docker run```, ```docker build``` ```docker-compose up``` etc. Often it's hassle to type all of the various commands even when you know all of them all. 
 
-Originally, Makefiles were design to automate the mundane aspects of transforming source code into an executable. Makefiles let you describe the dependencies of processes that rely on other processes.
-All you need to know is that when used wisely, you can make a tailored workflow you actually enjoy.
+GNU Make is a tool which controls the generation of executables and other non-source files of a program from the program's source files.
+
+Make gets its knowledge of how to build your program from a file called the makefile, which lists each of the non-source files and how to compute it from other files. When you write a program, you should write a makefile for it, so that it is possible to use Make to build and install the program.
+
 
 You see makefiles used a lot in C++ programs. That's because it was intended to be used for compiling files. For example:
 
@@ -671,19 +673,36 @@ You see makefiles used a lot in C++ programs. That's because it was intended to 
 hello: hello.c
   gcc hello.c -o hello
 ```
+When typing ```make``` within a directory containing a makefile, GNU Make will read your Makefile and build the first target it finds.
 
-Typing ```make``` within a directory containing a makefile, GNU Make would read the Makefile and build the first target it finds.
+You can also specify a target.
 
-If a target "hello" is included, that target is updated.
+```make hello```
 
-Typically, the default goal in most make files is to build a program. This usually involves many steps. The syntax is as follows:
+If the target "hello" is included, that target is updated.
+
+Typically, the default goal in most makefiles is to build a program. This usually involves many steps. The syntax is as follows:
 
 ```
 target: prerequisite prerequisite prerequisite ...
 (TAB) commands 
 ```
 
-\[Create file to abstract out docker-compose commands]
+Makefiles can make your life a lot easier, helping you make a workflow you actually enjoy by abstracting away long commands to shorter memorable names. For example, the following command could abstract away a series of commands:
+
+```
+make api
+
+# is shorter than
+
+docker network create postgres
+docker-compose up api db
+```
+Before using Makefiles, you need to understand Phony Targets.
+
+### Phony Targets
+
+
 
 ### Demo
 
