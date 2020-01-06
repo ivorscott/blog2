@@ -658,7 +658,30 @@ docker-compose down
 
 ## Makefiles
 
-\[Description]
+In development with docker there will be a series of commands you will write to perform some task. Its a hassle to remember all the various commands and even if you know them all it can be annoying to type. GNU Make or Makefiles, are great for abstracting away the commands to shorter memorable names. 
+
+Originally, Makefiles were design to automate the mundane aspects of transforming source code into an executable. Makefiles let you describe the dependencies of processes that rely on other processes.
+All you need to know is that when used wisely, you can make a tailored workflow you actually enjoy.
+
+You see makefiles used a lot in C++ programs. That's because it was intended to be used for compiling files. For example:
+
+```
+# Makefile example
+
+hello: hello.c
+  gcc hello.c -o hello
+```
+
+Typing ```make``` within a directory containing a makefile, GNU Make would read the Makefile and build the first target it finds.
+
+If a target "hello" is included, that target is updated.
+
+Typically, the default goal in most make files is to build a program. This usually involves many steps. The syntax is as follows:
+
+```
+target: prerequisite prerequisite prerequisite ...
+(TAB) commands 
+```
 
 \[Create file to abstract out docker-compose commands]
 
