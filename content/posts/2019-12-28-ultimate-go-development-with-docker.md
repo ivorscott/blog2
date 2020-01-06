@@ -702,6 +702,36 @@ Before using Makefiles, you need to understand Phony Targets.
 
 ### Phony Targets
 
+Targets and prerequisites don't have to be files. This is typically the case when compiling executables but for you a target is just a label representing a command script.
+
+Targets that do not represent files are known as phony targets.
+
+Phony targets are always executed. Since makefile can distinguish between a file target and a phony target conflicts may arise in development. For example, your in a directory with a file named test and inside a makefile in the same directory you have a target name test without prerequisites:
+
+```
+test: 
+    echo test something
+```
+
+Running make test in this scenario may not work as you expect. The output of this command would be ```test is up to date```. This is because GNU make sees the test file and then the target without prerequisites and determines that you don't have any commands to perform because everything is up to date. GNU is make does want to perform an unnecessary action. This is an intended optimisation needed for compiling executables. Most of the time, if you are using GNU make to compile executable files you don't want to compile files that don't need to be compiled because they haven't changed.
+
+You can by pass this by indicating that the target is a phony target. The phony target declaration can appear anywhere in the makefile, above or below the target it relates to.
+
+```
+test:
+    echo test something
+
+.PHONY: test
+```
+
+With this, ```make test``` finally runs the command, and no longer shows the test is up to date response.
+
+Just remember it's only necessary to use ```.PHONY: target``` when there is a filename conflict with a target defined in a makefile. In the above example, if the test file didn't exist than there would had been no reason to apply .PHONY: test. 
+
+Alright, that's it for makefiles. You can read more about PHONY Targets [here](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html). In this tutorial project you won't need them but you should be aware of them and how they work.
+
+
+ 
 
 
 ### Demo
@@ -743,6 +773,36 @@ Before using Makefiles, you need to understand Phony Targets.
 \[Add command to makefile]
 
 ### Demo
+
+Create the following makefile in the project root.
+
+```
+#!make
+
+NETWORKS="$(shell docker network ls)"
+SUCCESS=[ done "\xE2\x9C\x94" ]
+
+all: postgres-network
+	@echo [ starting client '&' api... ]
+	docker-compose up client api db
+
+postgres-network:
+ifeq (,$(findstring postgres,$(NETWORKS)))
+	@echo [ creating postgres network... ]
+	docker network create postgres
+	@echo $(SUCCESS)
+endif
+
+api: postgres-network
+	@echo [ starting api... ]
+	docker-compose up api db
+
+down:
+	@echo [ teardown all containers... ]
+	docker-compose down
+	@echo $(SUCCESS)
+```
+
 
 ## Conclusion
 
