@@ -658,12 +658,11 @@ docker-compose down
 
 ## Makefiles
 
-Working with Docker will require you too know a series of commands: ```docker run```, ```docker build``` ```docker-compose up``` etc. Often it's hassle to type all of the various commands even when you know all of them all. 
+Working with Docker will require you too know a series of commands: `docker run`, `docker build` `docker-compose up` etc. Often it's hassle to type all of the various commands even when you know all of them all. 
 
 GNU Make is a tool which controls the generation of executables and other non-source files of a program from the program's source files.
 
 Make gets its knowledge of how to build your program from a file called the makefile, which lists each of the non-source files and how to compute it from other files. When you write a program, you should write a makefile for it, so that it is possible to use Make to build and install the program.
-
 
 You see makefiles used a lot in C++ programs. That's because it was intended to be used for compiling files. For example:
 
@@ -673,11 +672,12 @@ You see makefiles used a lot in C++ programs. That's because it was intended to 
 hello: hello.c
   gcc hello.c -o hello
 ```
-When typing ```make``` within a directory containing a makefile, GNU Make will read your Makefile and build the first target it finds.
+
+When typing `make` within a directory containing a makefile, GNU Make will read your Makefile and build the first target it finds.
 
 You can also specify a target.
 
-```make hello```
+`make hello`
 
 If the target "hello" is included, that target is updated.
 
@@ -698,6 +698,7 @@ make api
 docker network create postgres
 docker-compose up api db
 ```
+
 Before using Makefiles, you need to understand Phony Targets.
 
 ### Phony Targets
@@ -713,7 +714,7 @@ test:
     echo test something
 ```
 
-Running make test in this scenario may not work as you expect. The output of this command would be ```test is up to date```. This is because GNU make sees the test file and then the target without prerequisites and determines that you don't have any commands to perform because everything is up to date. GNU is make does want to perform an unnecessary action. This is an intended optimisation needed for compiling executables. Most of the time, if you are using GNU make to compile executable files you don't want to compile files that don't need to be compiled because they haven't changed.
+Running make test in this scenario may not work as you expect. The output of this command would be `test is up to date`. This is because GNU make sees the test file and then the target without prerequisites and determines that you don't have any commands to perform because everything is up to date. GNU is make does want to perform an unnecessary action. This is an intended optimisation needed for compiling executables. Most of the time, if you are using GNU make to compile executable files you don't want to compile files that don't need to be compiled because they haven't changed.
 
 You can by pass this by indicating that the target is a phony target. The phony target declaration can appear anywhere in the makefile, above or below the target it relates to.
 
@@ -724,15 +725,15 @@ test:
 .PHONY: test
 ```
 
-With this, ```make test``` finally runs the command, and no longer shows the test is up to date response.
+With this, `make test` finally runs the command, and no longer shows the test is up to date response.
 
-Just remember it's only necessary to use ```.PHONY: target``` when there is a filename conflict with a target defined in a makefile. In the above example, if the test file didn't exist than there would had been no reason to apply .PHONY: test. 
+Just remember it's only necessary to use `.PHONY: target` when there is a filename conflict with a target defined in a makefile. In the above example, if the test file didn't exist than there would had been no reason to apply .PHONY: test. 
 
 Alright, that's it for makefiles. You can read more about PHONY Targets [here](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html). In this tutorial project you won't need them but you should be aware of them and how they work.
 
 ## Creating The Project Makefile
 
-Create a ```makefile``` in your project root and open it. 
+Create a `makefile` in your project root and open it. 
 
 ```
 touch makefile
@@ -745,7 +746,8 @@ networks:
   postgres:
     external: true
 ```
-This means we still that it is our job to create them. I did this partly for readability and to share a more advanced makefile example with targets and prerequisites. By default, if we let docker-compose create our network by leaving out the ```external: true``` code line. docker-compose would have created a network name called go-delve-reload_postgres, which is essentially the project root directory name and the network name connected with an underscore.
+
+This means we still that it is our job to create them. I did this partly for readability and to share a more advanced makefile example with targets and prerequisites. By default, if we let docker-compose create our network by leaving out the `external: true` code line. docker-compose would have created a network name called go-delve-reload_postgres, which is essentially the project root directory name and the network name connected with an underscore.
 
 Review the following code.
 
@@ -778,11 +780,11 @@ down:
 
 Makefile can contain variables. The code above creates a NETWORKS variable by extracting the output of the docker network command.
 
-```shell docker network ls```
+`shell docker network ls`
 
-The ```shell``` function helps makefiles communicate with the world outside of make and performs the same function that backquotes (‘`’) perform in most shells. In other words, it evaluates the output of the command, this is called command expansion.
+The `shell` function helps makefiles communicate with the world outside of make and performs the same function that backquotes (‘`’) perform in most shells. In other words, it evaluates the output of the command, this is called command expansion.
 
-With this variable, we test if we have already created the postgres network, if it's equal to a null value aka ```$(null,$(findstring postgres,$(NETWORKS))``` then the network will be created. Notice how the first argument in the outer most parentheses is actually empty and followed by a comma --this is the proper syntax.
+With this variable, we test if we have already created the postgres network, if it's equal to a null value aka `$(null,$(findstring postgres,$(NETWORKS))` then the network will be created. Notice how the first argument in the outer most parentheses is actually empty and followed by a comma --this is the proper syntax.
 
 ```
 ifeq (,$(findstring postgres,$(NETWORKS)))
@@ -812,37 +814,298 @@ make down
 
 ## Live Reloading The API
 
-\[Add CompileDaemon to docker-compose.yml]
+No that you have have an understanding of docker-compose and makefiles let's wrap this tutorial up. The next feature is dope: live reloading you go api!
+
+If you remember, we already installed CompileDaemon in the dev stage of the api docker image. Let's finally use it. Under the api container service in your docker-compose.yml file, add the following code.
+
+```
+command: CompileDaemon --build="go build -o main ./cmd/api" --command=./main
+```
+
+Now your api container service should look like this:
+
+```
+  api:
+    build:
+      context: ./api
+      target: dev
+    secrets:
+      - postgres_db
+      - postgres_host
+      - postgres_user
+      - postgres_passwd
+    environment:
+      ADDR_PORT: 4000
+      POSTGRES_HOST: /run/secrets/postgres_host
+      POSTGRES_DB: /run/secrets/postgres_db
+      POSTGRES_USER: /run/secrets/postgres_user
+      POSTGRES_PASSWORD: /run/secrets/postgres_passwd
+    volumes:
+      - ./api:/api
+    networks:
+      - postgres
+    command: CompileDaemon --build="go build -o main ./cmd/api" --command=./main
+```
+
+That's it!
 
 ### Demo
+
+```
+make api
+```
+
+Open the browser to http://localhost:4000/. Then in your editor navigate to /api/internal/api/handlers.go. Change the  "Hello there.." output of the home handler and save. Watch the terminal restart before your eyes. Go back to the browser and refresh!
+
+![](/media/this-is-how.gif)
+
+### 
 
 ## Self-signed certificates with Traefik
 
-\[Description]
+Traefik is a cloud native edge router from [Containous](https://containo.us/). 
 
-\[Add Traefik to docker-compose.yml]
+[Explain]
+
+We always want to replicate the production environment as much as possible when developing locally. We do this by using self-signed certificates. Luckily Traefik has us covered and its super easy to use.
+
+Add the following code to the top of you docker-compose.yml file:
+
+```
+version: "3.7"
+services:
+  traefik:
+    image: traefik:v2.1.1
+    command:
+      - "--api.insecure=true" # Not For Production
+      - "--api.debug=true"
+      - "--log.level=DEBUG"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-public"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.api.local`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+```
+
+
 
 ### Demo
 
-## Improving The Postgres Workflow
+Navigate to https:/localhost:4000/products to see Traefik in action.
 
-\[Add pgadmin to docker-compose.yml]
+When viewing the api route in the browser, you will see the "Your connection is not private" message. This is common when using self-signed certificates.
 
-\[Add command to makefile]
+Simply click "Advanced", and then "Proceed to ... (unsafe)".
+
+Now do the same for the react app. Navigate to https:/localhost:3000.
+
+In a production environment, working with Traefik is not much different. You just need to ensure your DNS is setup correctly and that you have ownership of the domain names you wish to use. There's plenty of articles on how to use Traefik in production and if you run into issues you can always post your question on the [Containous community forum](https://community.containo.us/) or see if your question has already been answered. 
+
+## Debugging Postgres In The Terminal
+
+We already have postgres setup but we still haven't discussed how to interact with it. Eventually you're going to want to enter the running postgres container yourself to make queries or debug. There three ways we can do this.
+
+Add the following code to your make file
+
+```
+exec:
+	@echo [ executing $(cmd) in $(service) ]
+	docker-compose exec -u $(user) $(service) $(cmd)
+	@echo $(SUCCESS)
+
+debug-db:
+	@echo [ debugging postgres database... ]
+	@make exec user="$(POSTGRES_USER)" service="$(POSTGRES_HOST)" cmd="bash -c 'psql --dbname $(POSTGRES_DB)'"
+
+```
+The postgres container comes with a basic command line interface with postgres. This is your first option to start poking around. Run:
+
+```
+make debug-db
+```
+
+Inside the container run:
+
+```
+\dt
+select * from products;
+```
+
+Some issues the command ```select * from products``` won't work because its missing a semi-colon at the end of the statement. Also there's no auto-completion or syntax highlighting support. For these features we need [pgcli](https://www.pgcli.com/). 
+
+Replace the old debug-db target with this new one.
+
+```
+debug-db:
+	@echo [ debugging postgres database... ]
+	@docker run -it --rm --net postgres dencold/pgcli postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/$(POSTGRES_DB)
+```
+### Demo
+
+Pgcli is such a better interface to work with. 
+
+```
+make down
+make debug
+```
+
+Now inside the container run:
+
+```
+\dt
+select name, price from products
+```
+This is great we now have a user friendly terminal experience. For some, this may be all you need. In the next section, we will see how you can work with postgres in the browser.
+
+## PGAdmin4: Debugging Postgres In The Browser
+
+Add the following code in the Browser.
+
+```
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: test@example.com
+      PGADMIN_DEFAULT_PASSWORD: "SuperSecret"
+    depends_on:
+      - db
+    networks:
+      - postgres
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.tls=true"
+      - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.local`)"
+      - "traefik.http.routers.pgadmin.entrypoints=websecure"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+    restart: unless-stopped
+```
 
 ### Demo
+
+Navigate to https://pgadmin.local in your browser. The the email and password is the same email and password you added to the pgadmin container service config under ```PGADMIN_DEFAULT_EMAIL``` and ```PGADMIN_DEFAULT_PASSWORD``` environment variables.
+
+## Making Postgres Database Backups 
+
+Making database backups of your postgres database is straight forward. This is a good this to explain how the your postgres database got seeded with data in the first place. Navigate to api/scripts/create-db.sh.
+
+[Explain]
+
+Add the following command to your makefile.
+
+```
+dump:
+	@echo [ dumping postgres backup for $(POSTGRES_DB)... ]
+	@docker exec -it $(POSTGRES_HOST) pg_dump --username $(POSTGRES_USER) $(POSTGRES_DB) > ./api/scripts/backup.sql
+	@echo $(SUCCESS)
+
+```
+
+### Demo
+
+```
+make dump
+```
 
 ## Running Tests
 
-\[Add commands to makefile to test frontend and backend]
+Add some more commands to your make file to test both the client react app and the go api.
+
+```
+test-client:
+	@echo [ running client tests... ]
+	@make exec service="client" cmd="npm test"
+
+test-api:
+	@echo [ running api tests... ]
+	@make exec service="api" cmd="go test -v ./..."
+
+```
 
 ### Demo
 
+```
+make
+make test-client
+make test-api
+```
+Both commands essentially execute test commands in the running containers. While not necessary with unit tests, you should be aware of the fact that you can do this without creating additional containers specifically for tests in your docker-compose.yml file. 
+
+Another tip is you can build a test image targeting a test stage in a multi-stage build setup within the CI tool of your choice. You won't even need to run the image after building. If the build succeeds the tests have passed. If the test image fails to build something went wrong.
+
+```
+docker build --target test --tag reload/client:test ./client
+```
+
 ## Debugging With VSCode
 
-\[Add debug-api to docker-compose.yml]
+Finally let's debug our go api with breakpoint in VSCode using delve. If you remember, we already added the .vscode/launch.json file necessary to attach to the delve debugger in the container. In addition to this, we also added the delve binaries to our dev stage in the api dockerfile. Before we start debugging add the following container service to your docker-compose.yml file.
 
-\[Add command to makefile]
+```
+  debug-api:
+    build:
+      context: ./api
+      target: dev
+    secrets:
+      - postgres_db
+      - postgres_host
+      - postgres_user
+      - postgres_passwd
+    environment:
+      ADDR_PORT: 8888
+      POSTGRES_HOST: /run/secrets/postgres_host
+      POSTGRES_DB: /run/secrets/postgres_db
+      POSTGRES_USER: /run/secrets/postgres_user
+      POSTGRES_PASSWORD: /run/secrets/postgres_passwd
+    ports:
+      - 2345:2345
+    networks:
+      - postgres
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.debug-api.tls=true"
+      - "traefik.http.routers.debug-api.rule=Host(`debug.api.local`)"
+      - "traefik.http.routers.debug-api.entrypoints=websecure"
+      - "traefik.http.services.debug-api.loadbalancer.server.port=8888"
+    security_opt:
+      - "seccomp:unconfined"
+    tty: true
+    stdin_open: true
+    command: dlv debug --accept-multiclient --continue --headless --listen=:2345 --api-version=2 --log ./cmd/api/
+```
+
+Add the following target to you make file as well:
+
+```
+debug-api:
+	@echo [ debugging api... ]
+	docker-compose up traefik debug-api db pgadmin
+```
+
+### Demo
+
+```
+make debub-api
+```
 
 ### Demo
 
