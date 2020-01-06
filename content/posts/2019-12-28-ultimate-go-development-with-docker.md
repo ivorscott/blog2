@@ -730,11 +730,38 @@ Just remember it's only necessary to use ```.PHONY: target``` when there is a fi
 
 Alright, that's it for makefiles. You can read more about PHONY Targets [here](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html). In this tutorial project you won't need them but you should be aware of them and how they work.
 
-
- 
-
-
 ### Demo
+
+Create the following makefile in the project root.
+
+```
+#!make
+
+NETWORKS="$(shell docker network ls)"
+SUCCESS=[ done "\xE2\x9C\x94" ]
+
+all: postgres-network
+	@echo [ starting client '&' api... ]
+	docker-compose up client api db
+
+postgres-network:
+ifeq (,$(findstring postgres,$(NETWORKS)))
+	@echo [ creating postgres network... ]
+	docker network create postgres
+	@echo $(SUCCESS)
+endif
+
+api: postgres-network
+	@echo [ starting api... ]
+	docker-compose up api db
+
+down:
+	@echo [ teardown all containers... ]
+	docker-compose down
+	@echo $(SUCCESS)
+```
+
+
 
 \[Demo. Show everything still works]
 
@@ -773,36 +800,6 @@ Alright, that's it for makefiles. You can read more about PHONY Targets [here](h
 \[Add command to makefile]
 
 ### Demo
-
-Create the following makefile in the project root.
-
-```
-#!make
-
-NETWORKS="$(shell docker network ls)"
-SUCCESS=[ done "\xE2\x9C\x94" ]
-
-all: postgres-network
-	@echo [ starting client '&' api... ]
-	docker-compose up client api db
-
-postgres-network:
-ifeq (,$(findstring postgres,$(NETWORKS)))
-	@echo [ creating postgres network... ]
-	docker network create postgres
-	@echo $(SUCCESS)
-endif
-
-api: postgres-network
-	@echo [ starting api... ]
-	docker-compose up api db
-
-down:
-	@echo [ teardown all containers... ]
-	docker-compose down
-	@echo $(SUCCESS)
-```
-
 
 ## Conclusion
 
