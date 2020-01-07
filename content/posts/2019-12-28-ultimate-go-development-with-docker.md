@@ -865,7 +865,7 @@ Open the browser to http://localhost:4000/. Then in your editor navigate to /api
 
 Traefik is a cloud native edge router from [Containous](https://containo.us/). 
 
-[Explain]
+\[Explain]
 
 We always want to replicate the production environment as much as possible when developing locally. We do this by using self-signed certificates. Luckily Traefik has us covered and its super easy to use.
 
@@ -905,8 +905,6 @@ services:
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 ```
 
-
-
 ### Demo
 
 Navigate to https:/localhost:4000/products to see Traefik in action.
@@ -934,8 +932,8 @@ exec:
 debug-db:
 	@echo [ debugging postgres database... ]
 	@make exec user="$(POSTGRES_USER)" service="$(POSTGRES_HOST)" cmd="bash -c 'psql --dbname $(POSTGRES_DB)'"
-
 ```
+
 The postgres container comes with a basic command line interface with postgres. This is your first option to start poking around. Run:
 
 ```
@@ -949,7 +947,7 @@ Inside the container run:
 select * from products;
 ```
 
-Some issues the command ```select * from products``` won't work because its missing a semi-colon at the end of the statement. Also there's no auto-completion or syntax highlighting support. For these features we need [pgcli](https://www.pgcli.com/). 
+Some issues the command `select * from products` won't work because its missing a semi-colon at the end of the statement. Also there's no auto-completion or syntax highlighting support. For these features we need [pgcli](https://www.pgcli.com/). 
 
 Replace the old debug-db target with this new one.
 
@@ -958,6 +956,7 @@ debug-db:
 	@echo [ debugging postgres database... ]
 	@docker run -it --rm --net postgres dencold/pgcli postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@$(POSTGRES_HOST):5432/$(POSTGRES_DB)
 ```
+
 ### Demo
 
 Pgcli is such a better interface to work with. 
@@ -973,6 +972,7 @@ Now inside the container run:
 \dt
 select name, price from products
 ```
+
 This is great we now have a user friendly terminal experience. For some, this may be all you need. In the next section, we will see how you can work with postgres in the browser.
 
 ## PGAdmin4: Debugging Postgres In The Browser
@@ -1001,13 +1001,13 @@ Add the following code in the Browser.
 
 ### Demo
 
-Navigate to https://pgadmin.local in your browser. The the email and password is the same email and password you added to the pgadmin container service config under ```PGADMIN_DEFAULT_EMAIL``` and ```PGADMIN_DEFAULT_PASSWORD``` environment variables.
+Navigate to https://pgadmin.local in your browser. The the email and password is the same email and password you added to the pgadmin container service config under `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` environment variables.
 
-## Making Postgres Database Backups 
+## Making Postgres Database Backups
 
 Making database backups of your postgres database is straight forward. This is a good this to explain how the your postgres database got seeded with data in the first place. Navigate to api/scripts/create-db.sh.
 
-[Explain]
+\[Explain]
 
 Add the following command to your makefile.
 
@@ -1016,7 +1016,6 @@ dump:
 	@echo [ dumping postgres backup for $(POSTGRES_DB)... ]
 	@docker exec -it $(POSTGRES_HOST) pg_dump --username $(POSTGRES_USER) $(POSTGRES_DB) > ./api/scripts/backup.sql
 	@echo $(SUCCESS)
-
 ```
 
 ### Demo
@@ -1037,7 +1036,6 @@ test-client:
 test-api:
 	@echo [ running api tests... ]
 	@make exec service="api" cmd="go test -v ./..."
-
 ```
 
 ### Demo
@@ -1047,6 +1045,7 @@ make
 make test-client
 make test-api
 ```
+
 Both commands essentially execute test commands in the running containers. While not necessary with unit tests, you should be aware of the fact that you can do this without creating additional containers specifically for tests in your docker-compose.yml file. 
 
 Another tip is you can build a test image targeting a test stage in a multi-stage build setup within the CI tool of your choice. You won't even need to run the image after building. If the build succeeds the tests have passed. If the test image fails to build something went wrong.
@@ -1111,4 +1110,4 @@ make debub-api
 
 ## Conclusion
 
-\[Recap. What makes this the ultimate setup. What to take away.] Happy coding.
+With the setup you are equipped with the essential tools to createcreate your own workflow using docker-compose, makfiles, live reload, testing and debugging. Feel free to contact me if you havr any questions about this tutorial. I am available through email and twitter. Happy coding!
