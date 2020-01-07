@@ -17,31 +17,39 @@ tags:
 
 ![ultimate-go-development-with-docker](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg "The Ultimate Go Development Setup with Docker")
 
-## Why I'm writing this
+## Introduction
 
-Ever since I started deploying apps, leveraging tools like [Docker](https://docs.docker.com/get-started/), [Portainer](https://portainer.io), [Traefik](https://traefik.io) and [Drone](https://drone.io), I have been forced to recognize that many of my beloved infrastructure tools use the Golang programming language. Everywhere I would turn, I was using an open source Go library in my day to day workflow. So I did what anyone would do -- I learned some Go.
+This tutorial comes with source code. You can either go straight to my [master branch](https://github.com/ivorscott/go-delve-reload/tree/master) and try the completed version for yourself, or follow along with the project starter available under the [starter branch](https://github.com/ivorscott/go-delve-reload/tree/starter).
 
-It wasn't easy. Being a full stack developer, I immediately wanted things to work like my old workflow in JavaScript. In the past, I could rely on live reloading and debugging in VSCode, but it wasn't obvious how to do so in Go.
+We will start with a ready-made full stack project. I don't want to teach you how to make a react app or a go api, rather we will focus our attention on building tooling around a full stack project in order to support the ultimate Go and React development environment with Docker. 
 
-As of this writing, I have yet to find a way to live reload a Go api and delve debug it at the same time, in the same container.
+## Contents
 
-I ended up settling with live reloading a Go api in one container and then when needed, launching a debuggable version of the same api in a separate container, without live reload. This seemed to be a good compromise because I'm usually not debugging until I know I have a problem. At that point, I can simply launch another container to investigate.
+We'll be covering:
 
-### The Goal
+* Multi-Stage Builds
+* Docker Compose
+* Live Reloading
+* Self-Signed Certificates With [Traefik](https://traefik.io)
+* Working with Postgres
+* Running Tests
+* Debugging With Delve. 
 
-This tutorial comes with source code. You can either go straight to my [master branch](https://github.com/ivorscott/go-delve-reload/tree/master) and try the completed version for yourself or follow along with the project starter, available under the [starter branch](https://github.com/ivorscott/go-delve-reload/tree/starter).
+Let's begin.
 
-We will start with a ready-made full stack project. I don't want to teach you how to make a react app or a go api, rather we will focus our attention on building tooling around this full stack project in order to support the ultimate Go development environment with Docker. More specifically, we'll cover using multi-stage builds, docker-compose, live reloading, Traefik, Postgres, testing and debugging with delve locally. Let's begin.
+## Requirements
+
+* [VSCode](https://code.visualstudio.com/)
+* [Docker](https://www.docker.com/products/docker-desktop)
 
 ## Setting Up VSCode
 
-I considered making this tutorial IDE agnostic but there are a few amazing VSCode extensions I'd like to share and the last section fully embraces debugging with VSCode. That being said, you don't need any of these extensions I am about to mention, nor do you need to use the delve debugger, but I highly recommend it. 
-
 Download VSCode if you haven't already (its free). Then install the following extensions:
 
-1. [The Go extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) adds rich language support for the Go language to VSCode.
-2. [The Docker extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) adds syntax highlighting, commands, hover tips, and linting for Dockerfile and docker-compose files.
-3. [The hadolint extension](https://marketplace.visualstudio.com/items?itemName=exiasr.hadolint) also lints your Dockerfiles. It's my go to linter for creating best practice docker images.
+1. [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) 
+   Adds rich language support for the Go language.
+2. [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
+   Adds syntax highlighting, commands, hover tips, and linting for docker related files.
 
 Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout out the `starter` branch if you haven't already. 
 
@@ -78,67 +86,89 @@ Add the following contents to `launch.json`.
 }
 ```
 
-This will help VSCode remotely attach to the delve debugger inside the container. This will change the look of the debug tab in VSCode, providing you with a "Launch remote" debugging button that you can use to debug any breakpoints you have set. More on this in the last section but the Debug tab should look like this:
+This will help VSCode remotely attach to the delve debugger inside the container. This will change the look of the debug tab in VSCode, providing you with a "Launch remote" debugging button that you can use to debug any breakpoints you have set. More on this in the last section.
 
 ![debug-tab](/media/screen-shot-2020-01-05-at-02.33.20.png "Debug tab in VSCode")
 
-Adding the Docker extension also changes the look and feel of the VSCode editor. A new Docker tab should be visible, giving us easy access to manage containers, images, registries, networks and volumes. This prevents us from using the terminal to execute the docker commands that would give us the same results. The new Docker tab should look like this:
+Adding the Docker extension also changes the look and feel of the VSCode editor. A new Docker tab should be visible, giving us easy access to manage containers, images, registries, networks and volumes. 
 
 ![docker-tab](/media/screen-shot-2020-01-05-at-02.33.00.png "Docker tab in VSCode")
 
-## What is Docker anyway?
+## Why Docker?
 
-Docker allows you to package your app and host it on any operating system. No more, "It works on my machine". Docker supports the software lifecycle from development to production. With Docker, software delivery doesn't have to be painful and unpredictable. If you're working in a team. It's useful for operators, system admins, build engineers and developers. Docker's core belief is that it's possible to deliver software fast and in a predictable fashion. 
+Docker allows you to package your app and host it on any operating system. This means no more, "It works on my machine" talk. 
+
+Docker supports the software lifecycle from development to production. With Docker, software delivery doesn't have to be painful and unpredictable. If you're working in a team. It's useful for operators, system admins, build engineers and developers. 
+
+Docker's core belief is that it's possible to deliver software fast and in a predictable fashion. 
 
 ![use-docker](/media/screen-shot-2020-01-05-at-13.38.25.png "It works on my machine (Slap) --Use Docker!")
 
-### 3 Docker Concepts
+## Docker Basics
 
-### 1. Docker Images
+There are 3 concepts to know if you're new to Docker.
 
-Imagine packaging all your application's binaries and dependencies, meta data included, into a single object, that what a docker image is. It's the source of truth for your app. A docker image is not a virtual machine. There's no Kernel, just the application binaries, meaning you'r not working with a complete operating system you are still leveraging your host machine kernel. So in result your apps consume less resources are are much lighter than a Virtual machine. So it's possible to have hundreds on containers on your machine which wouldn't be possible with VMs.
+### 1. Images
 
-### 2. The Dockerfile
+A Docker image is your application's binaries, dependencies, and meta data included in a single entity, made up of multiple static layers that are cached for reuse. 
 
-We still need a recipe to create our personal Docker images, that's where the Dockerfile comes in. In a top down fashion you are actually provide the instructions of how you want to build your image. In the next section, you will see that Dockerfiles actually have their own language to do this.
+### 2. Dockerfile
+
+A Dockerfile is a recipe for making images. Each instruction forms its own image layer. 
 
 ### 3. Containers
 
-If a Dockerfile is the recipe for a Docker Image, and A Docker Image is the packaged application binaries and dependencies, then a container can be thought of as the running app instance of a particular Docker Image. Later we will use docker-compose to manage our many containers needed for a full stack development project.
+A Docker container is an app instance derived from a particular Docker Image. 
+
+
 
 ## Getting Started
 
-### Creating the Go API Dockerfile
+### Creating the API Dockerfile
 
-Create a new `Dockerfile` for the api folder and then open it up in your editor.
+Create a new `Dockerfile` for the api folder and then open it in your editor.
 
 ```
 touch api/Dockerfile
 ```
 
-As stated before, a Dockerfile is just a recipe for a Docker Image. We always start a Dockerfile by referencing a base image. If you wanted to start from completely scratch (an empty container) you would write:
+We start a Dockerfile by referencing a base image. If you wanted to start from completely scratch (an empty container) you would write:
 
 ```
 FROM scratch
 ```
 
-Since we're building a go api, in makes logical sense to base our image of [the official golang base image](https://hub.docker.com/_/golang).
+Since we're building a go api, we'll use the official [Golang base image](https://hub.docker.com/_/golang) found on DockerHub.
 
 ```
-FROM golang
+FROM golang:latest as base
 ```
 
-Save the file. Notice that immediately hadolint begins to lint the Dockerfile. It should alert you the following issue:
+> **Note:**
+>
+>  
+>
+> Avoiding using the 
+>
+> `:latest`
+>
+>  tag when referencing images. It's best to always pin down an explicit numbered version when referencing images.
 
-![](/media/screen-shot-2020-01-05-at-18.57.56.png)
-
-This is great. We can see that in terms of best practice, it best to pin down an image version when referencing one (note: `FROM golang:latest` is not explicit enough ). Update the first line to this instead:
+Update the first line to:
 
 ```
 FROM golang:1.13.5 as base
 ```
 
-Here we clearly set an explicit version and also begin to use multi-stage build by specifying that this first line begins the "base" stage by ending with `as base`. Multi-stage builds are handy in applying separation of concerns in a single Dockerfile. As we will see we can target a single stage from many later on. Creating additional stages is as easy as declaring another `FROM` statement and giving it a name. Stages can even reference other stages, for example: 
+Save the file. 
+
+### Multi-Stage
+
+Multi-stage builds help us apply separation of concerns. A multi-stage setup allows you to define different stages of a single Dockerfile to reference or target them later. In our Dockerfile, we declared the name of our first stage `as base`.
+
+Creating additional stages is as easy as declaring another `FROM` statement and giving that stage name. 
+
+For example: 
 
 ```
 # 2 stage multi-stage example
@@ -146,7 +176,7 @@ FROM scratch as base
 FROM base as dev
 ```
 
-Let's add a label below our first line.
+Let's add a `LABEL` below our first line.
 
 ```
 FROM golang:1.13.5 as base
@@ -156,17 +186,27 @@ LABEL maintainer="FIRSTNAME LASTNAME <YOUR@EMAIL.HERE>"
 
 Labels allow you to add meta data to your Docker image. 
 
-Next let's define the the current working directory inside the image, so that going forward every subsequent command within the current stage will define under this directory. While we are at it we can copy everything relative to where our Dockerfile is located and place it into the image.
+We can copy the api code from our project starter into the docker image so that it will be present inside the container when build the image and run an instance of it. 
+
+We can do this by setting the current working directory to `/api`, which actually represents a path in the container. In doing so, every subsequent command will now occur beneath this directory until we change it. 
 
 ```
-WORKDIR /api
-
-COPY . .
+WORKDIR /apiCOPY . .
 ```
 
 This has the added effective of moving the entire contents of the project's api folder inside the image.
 
-If we ever want to ignore some files we can create a `.dockerignore` file, which works exactly the same way as `.gitignore` from git. Before moving to the next stage, since we are using go modules we should pre-load all the module dependencies the api needs. Add the following below the copy command.
+If we ever want to ignore some files we can create a `.dockerignore` file, which works exactly the same way as `.gitignore` from git. 
+
+### Go modules
+
+Before moving to the next stage, since we are using go modules we should pre-load all the module dependencies the api needs.
+
+[Golang's official blog](https://blog.golang.org/using-go-modules) defines a go module as: 
+
+> a collection of Go packages stored in a file tree with a go.mod file at its root. The go.mod file defines the module’s module path, which is also the import path used for the root directory, and its dependency requirements, which are the other modules needed for a successful build. Each dependency requirement is written as a module path and a specific semantic version.
+
+Append the following line.
 
 ```
 RUN go mod download
@@ -178,7 +218,9 @@ On a new line, initiate a new stage for development purposes.
 FROM base as dev
 ```
 
-To preform live reloading and debugging we need to leverage two packages: CompileDaemon and delve. Let's make sure they are only downloaded within the development stage because we don't need them in production. To do this we need to leverage the `GOPATH`. The `GOPATH` where Go developers use to install packages prior to go modules. Let's define the `GOPATH` as an environment variable and add it to the image's `PATH` environment variable, then change the working directory again so that can specify exactly where we want these development dependencies and keep them separate from our go module dependencies. Add the following immediately after declaring the `dev` stage:
+To preform live reloading and debugging we need to leverage two packages: [CompileDaemon](https://github.com/githubnemo/CompileDaemon) and [delve](https://github.com/go-delve/delve). Let's make sure they are only downloaded within the `dev` stage because we don't need them in production. To do this we need to leverage the `GOPATH`. 
+
+The `GOPATH` is where Go developers installed packages prior to go modules. Let's define the `GOPATH` as an environment variable and add it to the image's `PATH`, so go can find these development packages. Then we'll change the current working directory again to point to our api code. Add the following below the `dev` stage:
 
 ```
 ENV GOPATH /go
@@ -190,7 +232,7 @@ RUN go get github.com/go-delve/delve/cmd/dlv
 RUN go get github.com/githubnemo/CompileDaemon
 ```
 
-The `RUN` command allows us to run any command in the Docker image. Here we download both dependencies in two separate lines. It's worth noting that each line in a Dockerfile is its own image layer. When you build an image, image layers get cached. So when you change code in the api the cache busts for the  `COPY . .` command, so that image layer and every subsequent layer downwards will be forced to rebuild.
+The `RUN` command allows us to run a command inside an image. Here we run two commands to download both development dependencies on two separate lines. It's worth noting that each line in a Dockerfile is its own image layer. When you build an image, image layers get cached. The cache busts whenever a preceding line becomes stale. For instance, the  `COPY . .` instruction will become invalidate whenever we change the api code. That means that every subsequent image layer downwards will be forced to rebuild.
 
 At this point, the dev stage is still pointing to `$GOPATH/src`. Let's change that back to where the api code is. In addition, we can `EXPOSE` some port we will be needing later. It's worth noting that the `EXPOSE` command is just meta data. It serves only as a reminder that these ports need to be opened in the container and will not automatically open them for us. The last line below begins yet another stage, the production stage. It is left empty on purpose. It is there only to depict the boarder picture of how you can create a through multi-stage setup, but we won't get into that here in this tutorial.
 
@@ -1110,4 +1152,4 @@ make debub-api
 
 ## Conclusion
 
-With the setup you are equipped with the essential tools to createcreate your own workflow using docker-compose, makfiles, live reload, testing and debugging. Feel free to contact me if you havr any questions about this tutorial. I am available through email and twitter. Happy coding!
+\[Recap. What makes this the ultimate setup. What to take away.] Happy coding.
