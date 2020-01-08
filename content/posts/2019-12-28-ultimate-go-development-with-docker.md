@@ -215,7 +215,7 @@ RUN go mod download
 On a new line, initiate a new stage for development purposes.
 
 ```
-FROM base as dev
+# DevelopmentFROM base as dev
 ```
 
 To preform live reloading and debugging we need to leverage two packages: [CompileDaemon](https://github.com/githubnemo/CompileDaemon) and [delve](https://github.com/go-delve/delve). Let's make sure they are only downloaded within the `dev` stage because we don't need them in production. To do this we need to leverage the `GOPATH`. 
@@ -232,19 +232,26 @@ RUN go get github.com/go-delve/delve/cmd/dlv
 RUN go get github.com/githubnemo/CompileDaemon
 ```
 
-The `RUN` command allows us to run a command inside an image. Here we run two commands to download both development dependencies on two separate lines. It's worth noting that each line in a Dockerfile is its own image layer. When you build an image, image layers get cached. The cache busts whenever a preceding line becomes stale. For instance, the  `COPY . .` instruction will become invalidate whenever we change the api code. That means that every subsequent image layer downwards will be forced to rebuild.
+The `RUN` command allows us to run a command inside an image. Here we have two commands to download both development dependencies on two separate lines. Once we build an image, each line will have its own cached image layer. Changes to an image layer will invalidate that layer and force every subsequent image layer downward to rebuild.
 
-At this point, the dev stage is still pointing to `$GOPATH/src`. Let's change that back to where the api code is. In addition, we can `EXPOSE` some port we will be needing later. It's worth noting that the `EXPOSE` command is just meta data. It serves only as a reminder that these ports need to be opened in the container and will not automatically open them for us. The last line below begins yet another stage, the production stage. It is left empty on purpose. It is there only to depict the boarder picture of how you can create a through multi-stage setup, but we won't get into that here in this tutorial.
+The dev stage is still pointing to `$GOPATH/src`. Let's change that back to where the api code is. In addition, we can `EXPOSE` some ports we will be needing later.
+
+The `EXPOSE` command is just meta data. It serves only as a reminder that these ports need to be opened in the container.
 
 ```
 WORKDIR /api
-# port 4000 -> api port# port 8888 -> debuggable api port# port 2345 -> debugger port
+# port 4000 ->api port# port 8888 -> debuggable api port# port 2345 -> debugger port
 EXPOSE 4000 8888 2345
 
-FROM base as prod
 ```
 
-By now, your api Dockerfile should look similar to this:
+We end with the production stage. We won't be defining this stage in this tutorial. I will leave that task for you. 
+
+```
+# ProductionFROM base as prod
+```
+
+By now, your api Dockerfile should look something similar to this:
 
 ```
 FROM golang:1.13.5 as base
@@ -273,8 +280,7 @@ WORKDIR /api
 # port 4000 -> api port
 # port 8888 -> debuggable api port
 # port 2345 -> debugger port
-EXPOSE 4000 8888 2345FROM dev as testRUN go test -v ./...
-
+EXPOSE 4000 8888 2345
 # Production
 FROM base as prod
 ```
@@ -282,14 +288,16 @@ FROM base as prod
 ### Demo
 
 ```
-docker build --target dev --tag reload/api ./api
+docker build --target dev --tag demo/api ./api
 ```
 
-The above command builds the Dockerfile creating a docker image we can use to create a container. Notice the use of two flags followed by the path to the directory where the Dockerfile lives, also known as the build context. The first flag from the left: `--target` specifies that we only want to target the `dev` stage in the multi-stage setup. The second flag: --tag specifies a name for your new image. If you were to publish the image to the official docker hub repository as a private or public image the format Dockerhub understand is username/image-name. Since we are not publishing to Dockerhub whether or not I have a username called `reload` doesn't matter here. 
+The `docker build` command builds the a new docker image referencing the Dockerfile inside the api folder. 
 
-The terminal output of the image build should show each step, or image layer, followed by a successful message at the end. 
+The first flag from the left: `--target` specifies that we only want to target the `dev` stage in the multi-stage setup. The second flag: `--tag` specifies a name we can use to reference the new image, it is tagged `demo/api`.
 
-At this point we are still missing the Postgres database. Let's go over the client Dockerfile before attempting to run the image as a container.
+If you publish a private or public image to DockerHub the format it expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username.
+
+While building an image, the terminal output should show each step, or image layer, ending with a success message if successful. 
 
 ### Creating the React app Dockerfile
 
@@ -480,7 +488,7 @@ COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 ### Demo
 
 ```
-docker build --target dev --tag reload/client ./clientdocker build --target test --tag reload/client-test ./clientdocker build --target prod --tag reload/client-prod ./client
+docker build --target dev --tag demo/client:dev ./clientdocker build --target test --tag demo/client:test ./clientdocker build --target prod --tag demo/client:prod ./client
 ```
 
 ## Docker Compose
@@ -528,7 +536,7 @@ Begin with the api container.
       - postgres_passwd
     environment:
       ADDR_PORT: 4000
-      POSTGRES_HOST: /run/secrets/postgres_host
+      POSTGRES_HOST: db
       POSTGRES_DB: /run/secrets/postgres_db
       POSTGRES_USER: /run/secrets/postgres_user
       POSTGRES_PASSWORD: /run/secrets/postgres_passwd
@@ -576,11 +584,6 @@ The Go api needs to communicate with a Postgres database. Create a container for
       - ./api/scripts/:/docker-entrypoint-initdb.d/
     networks:
       - postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 ```
 
 At the very bottom of the file we need to create the volumes, networks and secrets need by the containers.
@@ -588,7 +591,7 @@ At the very bottom of the file we need to create the volumes, networks and secre
 ```
 volumes:
   postgres:
-
+    external: true
 networks:
   postgres:
     external: true
@@ -598,8 +601,6 @@ networks:
 secrets:
   postgres_db:
     file: ./secrets/postgres_db
-  postgres_host:
-    file: ./secrets/postgres_host
   postgres_passwd:
     file: ./secrets/postgres_passwd
   postgres_user:
@@ -617,12 +618,11 @@ services:
       target: dev
     secrets:
       - postgres_db
-      - postgres_host
       - postgres_user
       - postgres_passwd
     environment:
       ADDR_PORT: 4000
-      POSTGRES_HOST: /run/secrets/postgres_host
+      POSTGRES_HOST: db
       POSTGRES_DB: /run/secrets/postgres_db
       POSTGRES_USER: /run/secrets/postgres_user
       POSTGRES_PASSWORD: /run/secrets/postgres_passwd
@@ -669,7 +669,7 @@ services:
       retries: 5
 
 volumes:
-  postgres:
+  postgres:    external: true
 
 networks:
   postgres:
@@ -680,8 +680,6 @@ networks:
 secrets:
   postgres_db:
     file: ./secrets/postgres_db
-  postgres_host:
-    file: ./secrets/postgres_host
   postgres_passwd:
     file: ./secrets/postgres_passwd
   postgres_user:
@@ -797,6 +795,7 @@ Review the following code.
 #!make
 
 NETWORKS="$(shell docker network ls)"
+VOLUMES="$(shell docker volume ls)"
 SUCCESS=[ done "\xE2\x9C\x94" ]
 
 all: postgres-network
@@ -807,6 +806,13 @@ postgres-network:
 ifeq (,$(findstring postgres,$(NETWORKS)))
 	@echo [ creating postgres network... ]
 	docker network create postgres
+	@echo $(SUCCESS)
+endif
+
+postgres-volume:
+ifeq (,$(findstring postgres,$(VOLUMES)))
+	@echo [ creating postgres volume... ]
+	docker volume create postgres
 	@echo $(SUCCESS)
 endif
 
