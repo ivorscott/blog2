@@ -6,9 +6,9 @@ draft: true
 date: 2019-12-27T20:51:27.221Z
 description: >-
   Lately, I've been interested in migrating APIs from Node to Go. With Node, I
-  had the ultimate workflow, but I had a problem achieving a similar one with
-  Go. This post illustrates the use of docker compose to automate live reloading
-  a Go API on code changes, debugging it with breakpoints and running tests.
+  had the ultimate workflow, but I had a problem achieving a similar one in Go.
+  This post illustrates the use of docker compose to automate live reloading a
+  Go API on code changes, debugging it with breakpoints and running tests.
 category: development
 tags:
   - Delve Docker Golang Makefile Postgres Traefik VSCode
@@ -326,7 +326,7 @@ Change the working directory to where the react app will live inside the contain
 WORKDIR /client
 ```
 
-Copy over the `package.json` and `package.lock` files on its own line rather then doing `COPY . . ` That way if the packages don't change we won't need to re-install production dependencies again.
+Copy over the `package.json` and `package.lock` files on its own line rather then doing `COPY . .` That way if the packages don't change we won't need to re-install production dependencies again.
 
 ```
 COPY package*.json ./
@@ -483,7 +483,7 @@ COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 ### Demo
 
 ```
-docker build --target dev --tag demo/client:dev ./clientdocker build --target test --tag demo/client:test ./clientdocker build --target prod --tag demo/client:prod ./client
+# build dev imagedocker build --target dev --tag demo/client:dev ./client# build test imagedocker build --target test --tag demo/client:test ./client# build prod imagedocker build --target prod --tag demo/client:prod ./client
 ```
 
 ## Docker Compose
@@ -718,16 +718,7 @@ target: prerequisite prerequisite prerequisite ...
 (TAB) commands 
 ```
 
-Makefiles can make your life a lot easier, helping you make a workflow you actually enjoy by abstracting away long commands to shorter memorable names. For example, the following command could abstract away a series of commands:
-
-```
-make api
-
-# is shorter than
-
-docker network create postgres
-docker-compose up api db
-```
+Makefiles can make your life a lot easier, helping you make a workflow you actually enjoy by abstracting away long commands to shorter memorable names.
 
 Before using Makefiles, you need to understand Phony Targets.
 
@@ -744,7 +735,7 @@ test:
     echo test something
 ```
 
-Running make test in this scenario may not work as you expect. The output of this command would be `test is up to date`. This is because GNU make sees the test file and then the target without prerequisites and determines that you don't have any commands to perform because everything is up to date. GNU is make does want to perform an unnecessary action. This is an intended optimisation needed for compiling executables. Most of the time, if you are using GNU make to compile executable files you don't want to compile files that don't need to be compiled because they haven't changed.
+Running make test in this scenario may not work as you expect. The output of this command would be `test is up to date`. This is because GNU make sees the test file and then the target without prerequisites and determines that you don't have any commands to perform because everything is up to date. GNU is make does want to perform an unnecessary action. This is an intended optimization needed for compiling executables. Most of the time, if you are using GNU make to compile executable files you don't want to compile files that don't need to be compiled because they haven't changed.
 
 You can by pass this by indicating that the target is a phony target. The phony target declaration can appear anywhere in the makefile, above or below the target it relates to.
 
@@ -757,7 +748,7 @@ test:
 
 With this, `make test` finally runs the command, and no longer shows the test is up to date response.
 
-Just remember it's only necessary to use `.PHONY: target` when there is a filename conflict with a target defined in a makefile. In the above example, if the test file didn't exist than there would had been no reason to apply .PHONY: test. 
+Just remember it's only necessary to use `.PHONY: target` when there is a filename conflict with a target defined in a makefile. In the above example, if the test file didn't exist then there would had been no reason to apply .PHONY: test.  
 
 Alright, that's it for makefiles. You can read more about PHONY Targets [here](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html). In this tutorial project you won't need them but you should be aware of them and how they work.
 
@@ -1142,8 +1133,8 @@ debug-api:
 make debub-api
 ```
 
-### Demo
+Go to /api/internal/handlers.go and place a break point in one of the handlers. Within vscode Click "Launch Remote" button in the debugger tab. Next navigate to the route that triggers the handler. You should see the editor pause where you placed the break point. 
 
-## Conclusion
+## You did it!
 
-Happy coding.
+We covered a lot in this tutorial. I hope you now have the tools necessary to build your own custom workflow and development setup that suits your needs. Happy coding.
