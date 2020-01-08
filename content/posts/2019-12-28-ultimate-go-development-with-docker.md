@@ -120,8 +120,6 @@ A Dockerfile is a recipe for making images. Each instruction forms its own image
 
 A Docker container is an app instance derived from a particular Docker Image. 
 
-
-
 ## Getting Started
 
 ### Creating the API Dockerfile
@@ -145,8 +143,6 @@ FROM golang:latest as base
 ```
 
 > **Note:**
->
->  
 >
 > Avoiding using the 
 >
@@ -242,7 +238,6 @@ The `EXPOSE` command is just meta data. It serves only as a reminder that these 
 WORKDIR /api
 # port 4000 ->api port# port 8888 -> debuggable api port# port 2345 -> debugger port
 EXPOSE 4000 8888 2345
-
 ```
 
 We end with the production stage. We won't be defining this stage in this tutorial. I will leave that task for you. 
@@ -301,7 +296,7 @@ While building an image, the terminal output should show each step, or image lay
 
 ### Creating the React app Dockerfile
 
-The client Dockerfile is a complete multi-stage Dockerfile that I have used previously for developing, testing and deploying react apps. It's a bit more complicated so let's dive in.
+The next Dockerfile is a complete multi-stage Dockerfile that I have used previously for developing, testing and deploying react apps. It's a bit more complicated so let's dive in.
 
 First we need to determine which base image we would like to extend from our `base` stage.
 
@@ -313,7 +308,7 @@ I have gone ahead and specified the node:10.15.0-apline image. Apline image are 
 
 **Note:** Alpine images are so light weight, they remove some parts required for image scanning tools to detect vulnerabilities. We won't be including any image scanning tools in this tutorial but It's worth mentioning that such a thing exists. 
 
-Lets's add some meta data to the client Dockerfile just like before:
+Let's add some meta data to the client Dockerfile just like before:
 
 ```
 LABEL maintainer="FIRSTNAME LASTNAME <YOUR@EMAIL.HERE>"
@@ -331,7 +326,7 @@ Change the working directory to where the react app will live.
 WORKDIR /client
 ```
 
-Copy over the package.json and package.lock files. This way if the packages changes we are certain to re-install production dependencies on the next rebuild when the cache busts.
+Copy over the `package.json` and `package.lock` files. This way if the packages changes we are certain to re-install production dependencies on the next rebuild when the cache busts.
 
 ```
 COPY package*.json ./
@@ -365,7 +360,7 @@ A common issue is with node modules is that, some modules like node-gyp, are  in
 
 One solution is to never run npm install on the host machine. However, this is a bit annoying. While doing that works, VSCode will show errors on node_module imports because it can't find the node_modules on the host machine and doesn't know how to look inside the container to find the node_modules. 
 
-To prevent these issues, there's a clever trick that involved hiding the host machines node modules from the container and installing the node_modules in a parent directory inside the container. This will make more sense when we start defining the docker-compose.yml file. 
+To prevent these issues, there's a clever trick that involved hiding the host machines node modules from the container and installing the node_modules in a parent directory inside the container. This will make more sense when we start defining the `docker-compose.yml` file. 
 
 Create a `RUN` command that creates an app directory where the react app src code will live and recursively change  everything inside the client directory to be owned by the node user with is much safer that being root which is the default.
 
@@ -398,7 +393,7 @@ The next line is for debugging purposes only. When something goes wrong it may b
 RUN npm config list
 ```
 
-Before we go to the next line. Please take note that the node_modules are inside the client directory not inside the app directory we are about to create. Later in your docker-compose.yml file, you will hide the host machine's node_modules from the container, causing node to traverse up the folder hierarchy until it finds the node_modules we placed in the client directory. That's the trick to prevent node_modules issues in Docker during development.
+Before we go to the next line. Please take note that the node_modules are inside the client directory not inside the app directory we are about to create. Later in your `docker-compose.yml` file, you will hide the host machine's node_modules from the container, causing node to traverse up the folder hierarchy until it finds the node_modules we placed in the client directory. That's the trick to prevent node_modules issues in Docker during development.
 
 Let's continue. Create an `app` directory under the `client` directory and start the react app.
 
@@ -495,7 +490,7 @@ docker build --target dev --tag demo/client:dev ./clientdocker build --target te
 
 Docker compose is a command line tools and configuration file. It uses YAML. It helps you a bunch on containers that have relationships with one another. It's worth noting that docker-compose is meant for local development and test automation. Its not a production grade tool. For production you are better off using a production grade orchestrator like Docker Swarm or Kubernetes.
 
-Create a docker-compose.yml file in the project root and open it up in your editor.
+Create a `docker-compose.yml` file in the project root and open it up in your editor.
 
 ```
 touch docker-compose.yml        
@@ -586,7 +581,7 @@ The Go api needs to communicate with a Postgres database. Create a container for
       - postgres
 ```
 
-At the very bottom of the file we need to create the volumes, networks and secrets need by the containers.
+At the very bottom of the file we need to create the volumes, networks and secrets needed by the containers.
 
 ```
 volumes:
@@ -607,7 +602,7 @@ secrets:
     file: ./secrets/postgres_user
 ```
 
-Your docker-compose.yml file should now look like this:
+Your `docker-compose.yml` file should now look like this:
 
 ```
 version: "3.7"
@@ -662,11 +657,6 @@ services:
       - ./api/scripts/:/docker-entrypoint-initdb.d/
     networks:
       - postgres
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
 volumes:
   postgres:    external: true
@@ -1158,4 +1148,4 @@ make debub-api
 
 ## Conclusion
 
-\[Recap. What makes this the ultimate setup. What to take away.] Happy coding.
+Happy coding.
