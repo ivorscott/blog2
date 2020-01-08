@@ -488,7 +488,7 @@ docker build --target dev --tag demo/client:dev ./clientdocker build --target te
 
 ## Docker Compose
 
-Docker compose is a command line tools and configuration file. It uses YAML. It helps you a bunch on containers that have relationships with one another. It's worth noting that docker-compose is meant for local development and test automation. Its not a production grade tool. For production you are better off using a production grade orchestrator like Docker Swarm or Kubernetes.
+Docker compose is a command line tools and configuration file. It uses YAML. It helps you a bunch on containers that have relationships with one another. It's worth noting that docker-compose is meant for local development and test automation. It's not a production grade tool. For production you are better off using a production grade orchestrator like Docker Swarm or Kubernetes.
 
 Create a `docker-compose.yml` file in the project root and open it up in your editor.
 
@@ -504,7 +504,7 @@ version: "3.7"
 
 Different versions support different features.
 
-To add containers to the docker-compose.yml file you first declare the `services:` key and then a list of containers beneath it. The configuration for each container goes immediately after it. 
+To add containers to the `docker-compose.yml` file you first declare the `services:` key and then a list of containers beneath it. The configuration for each container goes immediately after it. 
 
 ```
 version: "3.7"
@@ -854,7 +854,7 @@ make down
 
 No that you have have an understanding of docker-compose and makefiles let's wrap this tutorial up. The next feature is dope: live reloading you go api!
 
-If you remember, we already installed CompileDaemon in the dev stage of the api docker image. Let's finally use it. Under the api container service in your docker-compose.yml file, add the following code.
+If you remember, we already installed CompileDaemon in the dev stage of the api docker image. Let's finally use it. Under the api container service in your `docker-compose.yml` file, add the following code.
 
 ```
 command: CompileDaemon --build="go build -o main ./cmd/api" --command=./main
@@ -869,12 +869,11 @@ Now your api container service should look like this:
       target: dev
     secrets:
       - postgres_db
-      - postgres_host
       - postgres_user
       - postgres_passwd
     environment:
       ADDR_PORT: 4000
-      POSTGRES_HOST: /run/secrets/postgres_host
+      POSTGRES_HOST: db
       POSTGRES_DB: /run/secrets/postgres_db
       POSTGRES_USER: /run/secrets/postgres_user
       POSTGRES_PASSWORD: /run/secrets/postgres_passwd
@@ -1094,7 +1093,7 @@ docker build --target test --tag reload/client:test ./client
 
 ## Debugging With VSCode
 
-Finally let's debug our go api with breakpoint in VSCode using delve. If you remember, we already added the .vscode/launch.json file necessary to attach to the delve debugger in the container. In addition to this, we also added the delve binaries to our dev stage in the api dockerfile. Before we start debugging add the following container service to your docker-compose.yml file.
+Finally let's debug our go api with breakpoint in VSCode using delve. If you remember, we already added the `.vscode/launch.json` file necessary to attach to the delve debugger in the container. In addition to this, we also added the delve binaries to our dev stage in the api Dockerfile. Before we start debugging add the following container service to your `docker-compose.yml` file.
 
 ```
   debug-api:
@@ -1103,12 +1102,11 @@ Finally let's debug our go api with breakpoint in VSCode using delve. If you rem
       target: dev
     secrets:
       - postgres_db
-      - postgres_host
       - postgres_user
       - postgres_passwd
     environment:
       ADDR_PORT: 8888
-      POSTGRES_HOST: /run/secrets/postgres_host
+      POSTGRES_HOST: db
       POSTGRES_DB: /run/secrets/postgres_db
       POSTGRES_USER: /run/secrets/postgres_user
       POSTGRES_PASSWORD: /run/secrets/postgres_passwd
