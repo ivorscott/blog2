@@ -296,7 +296,7 @@ While building an image, the terminal output should show each step, or image lay
 
 ### Creating the React app Dockerfile
 
-The next Dockerfile is a complete multi-stage Dockerfile that I have used previously for developing, testing and deploying react apps. It's a bit more complicated so let's dive in.
+The client Dockerfile is a complete multi-stage setup that I have used previously for developing, testing and deploying react apps. It's a bit more complicated so let's dive in.
 
 First we need to determine which base image we would like to extend from our `base` stage.
 
@@ -304,9 +304,9 @@ First we need to determine which base image we would like to extend from our `ba
 FROM node:10.15.0-alpine as base
 ```
 
-I have gone ahead and specified the node:10.15.0-apline image. Apline image are incredible small and lightweight. The lighter the image the better.
+I have gone ahead and specified the `node:10.15.0-apline` image. Apline images are incredibly lightweight. The lighter the image the better.
 
-**Note:** Alpine images are so light weight, they remove some parts required for image scanning tools to detect vulnerabilities. We won't be including any image scanning tools in this tutorial but It's worth mentioning that such a thing exists. 
+**Note:** Alpine images are so light weight, they remove some parts required for image scanning tools to detect vulnerabilities. We won't be including any image scanning tools in this tutorial but such things exists. 
 
 Let's add some meta data to the client Dockerfile just like before:
 
@@ -314,19 +314,19 @@ Let's add some meta data to the client Dockerfile just like before:
 LABEL maintainer="FIRSTNAME LASTNAME <YOUR@EMAIL.HERE>"
 ```
 
-Will start consider the production environment early on. Use the ENV command to set NODE_ENV to production
+Use the ENV command to set NODE_ENV to production
 
 ```
 ENV NODE_ENV=production
 ```
 
-Change the working directory to where the react app will live.
+Change the working directory to where the react app will live inside the container.
 
 ```
 WORKDIR /client
 ```
 
-Copy over the `package.json` and `package.lock` files. This way if the packages changes we are certain to re-install production dependencies on the next rebuild when the cache busts.
+Copy over the `package.json` and `package.lock` files on its own line rather then doing `COPY . . ` That way if the packages don't change we won't need to re-install production dependencies again.
 
 ```
 COPY package*.json ./
