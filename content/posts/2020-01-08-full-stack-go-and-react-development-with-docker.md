@@ -237,6 +237,35 @@ Add the following content:
 ```
 version: "3.7"
 services:
+  traefik:
+    image: traefik:v2.1.1
+    command:
+      - "--api.insecure=true" # Not For Production
+      - "--api.debug=true"
+      - "--log.level=DEBUG"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-public"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.api.local`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
   api:
     build:
       context: ./api
@@ -256,6 +285,13 @@ services:
     networks:
       - postgres
       - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.tls=true"
+      - "traefik.http.routers.api.rule=Host(`api.local`)"
+      - "traefik.http.routers.api.entrypoints=websecure"
+      - "traefik.http.services.debug-api.loadbalancer.server.port=4000"
+    command: CompileDaemon --build="go build -o main ./cmd/api" --command=./main
 
   client:
     build:
@@ -268,6 +304,43 @@ services:
       - /client/app/node_modules
     networks:
       - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client.tls=true"
+      - "traefik.http.routers.client.rule=Host(`client.local`)"
+      - "traefik.http.routers.client.entrypoints=websecure"
+      - "traefik.http.services.client.loadbalancer.server.port=3000"
+
+  debug-api:
+    build:
+      context: ./api
+      target: dev
+    secrets:
+      - postgres_db
+      - postgres_user
+      - postgres_passwd
+    environment:
+      ADDR_PORT: 8888
+      POSTGRES_HOST: db
+      POSTGRES_DB: /run/secrets/postgres_db
+      POSTGRES_USER: /run/secrets/postgres_user
+      POSTGRES_PASSWORD: /run/secrets/postgres_passwd
+    ports:
+      - 2345:2345
+    networks:
+      - postgres
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.debug-api.tls=true"
+      - "traefik.http.routers.debug-api.rule=Host(`debug.api.local`)"
+      - "traefik.http.routers.debug-api.entrypoints=websecure"
+      - "traefik.http.services.debug-api.loadbalancer.server.port=8888"
+    security_opt:
+      - "seccomp:unconfined"
+    tty: true
+    stdin_open: true
+    command: dlv debug --accept-multiclient --continue --headless --listen=:2345 --api-version=2 --log ./cmd/api/
 
   db:
     image: postgres:11.6
@@ -288,8 +361,27 @@ services:
     networks:
       - postgres
 
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: test@example.com
+      PGADMIN_DEFAULT_PASSWORD: "SuperSecret"
+    depends_on:
+      - db
+    networks:
+      - postgres
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pgadmin.tls=true"
+      - "traefik.http.routers.pgadmin.rule=Host(`pgadmin.local`)"
+      - "traefik.http.routers.pgadmin.entrypoints=websecure"
+      - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
+    restart: unless-stopped
+
 volumes:
-  postgres:    external: true
+  postgres:
+    external: true
 
 networks:
   postgres:
@@ -306,10 +398,236 @@ secrets:
     file: ./secrets/postgres_user
 ```
 
-# Live Reloading A Go API
+### Demo
+
+```
+docker-compose up
+```
+
+```
+docker-compose down
+```
+
+# Makefiles
+
+It's often a hassle to type all of the various docker commands even when you know them. GNU Make is an automation tool that can abstract away the commands for us.
+
+The syntax is as follows:
+
+```
+target: prerequisite prerequisite prerequisite ...
+(TAB) commands 
+```
+
+Targets that do not represent files are known as phony targets.
+
+Phony targets are always executed. Since makefile can distinguish between a file target and a phony target conflicts may arise in development. For example, your in a directory with a file named test and inside a makefile in the same directory you have a target name test without prerequisites:
+
+```
+test: 
+    echo test something
+```
+
+Running make test in this scenario may not work as you expect. The output of this command would be `test is up to date`. This is because GNU make sees the test file and then the target without prerequisites and determines that you don't have any commands to perform because everything is up to date. GNU is make does want to perform an unnecessary action. This is an intended optimization needed for compiling executables. Most of the time, if you are using GNU make to compile executable files you don't want to compile files that don't need to be compiled because they haven't changed.
+
+You can by pass this by indicating that the target is a phony target. The phony target declaration can appear anywhere in the makefile, above or below the target it relates to.
+
+```
+test:
+    echo test something
+
+.PHONY: test
+```
+
+With this, `make test` finally runs the command, and no longer shows the test is up to date response.
+
+Just remember it's only necessary to use `.PHONY: target` when there is a filename conflict with a target defined in a makefile. In the above example, if the test file didn't exist then there would had been no reason to apply .PHONY: test.  
+
+Alright, that's it for makefiles. You can read more about PHONY Targets [here](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html). In this tutorial project you won't need them but you should be aware of them and how they work.
+
+## Creating the Makefile
+
+Create a `makefile` in your project root and open it. 
+
+```
+touch makefile
+```
+
+Add the following contents:
+
+```
+#!make
+
+NETWORKS="$(shell docker network ls)"
+VOLUMES="$(shell docker volume ls)"
+POSTGRES_DB="$(shell cat ./secrets/postgres_db)"
+POSTGRES_USER="$(shell cat ./secrets/postgres_user)"
+POSTGRES_PASSWORD="$(shell cat ./secrets/postgres_passwd)"
+SUCCESS=[ done "\xE2\x9C\x94" ]
+
+# default arguments
+user ?= root
+service ?= api
+
+all: traefik-network postgres-network postgres-volume
+	@echo [ starting client '&' api... ]
+	docker-compose up traefik client api db pgadmin
+
+traefik-network:
+ifeq (,$(findstring traefik-public,$(NETWORKS)))
+	@echo [ creating traefik network... ]
+	docker network create traefik-public
+	@echo $(SUCCESS)
+endif
+
+postgres-network:
+ifeq (,$(findstring postgres,$(NETWORKS)))
+	@echo [ creating postgres network... ]
+	docker network create postgres
+	@echo $(SUCCESS)
+endif
+
+postgres-volume:
+ifeq (,$(findstring postgres,$(VOLUMES)))
+	@echo [ creating postgres volume... ]
+	docker volume create postgres
+	@echo $(SUCCESS)
+endif
+
+api: traefik-network postgres-network postgres-volume
+	@echo [ starting api... ]
+	docker-compose up traefik api db pgadmin
+
+down:
+	@echo [ teardown all containers... ]
+	docker-compose down
+	@echo $(SUCCESS)
+
+tidy: 
+	@echo [ cleaning up unused $(service) dependencies... ]
+	@make exec service="api" cmd="go mod tidy"
+
+exec:
+	@echo [ executing $(cmd) in $(service) ]
+	docker-compose exec -u $(user) $(service) $(cmd)
+	@echo $(SUCCESS)
+
+test-client:
+	@echo [ running client tests... ]
+	@make exec service="client" cmd="npm test"
+
+test-api:
+	@echo [ running api tests... ]
+	@make exec service="api" cmd="go test -v ./..."
+
+debug-api:
+	@echo [ debugging api... ]
+	docker-compose up traefik debug-api db pgadmin
+
+debug-db:
+	@echo [ debugging postgres database... ]
+	@# basic command line interface for postgres 
+	@# make exec user="$(POSTGRES_USER)" service="db" cmd="bash -c 'psql --dbname $(POSTGRES_DB)'"
+
+	@# advanced command line interface for postgres
+	@# includes auto-completion and syntax highlighting. https://www.pgcli.com/
+	@docker run -it --rm --net postgres dencold/pgcli postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/$(POSTGRES_DB)
+
+dump:
+	@echo [ dumping postgres backup for $(POSTGRES_DB)... ]
+	@docker exec -it db pg_dump --username $(POSTGRES_USER) $(POSTGRES_DB) > ./api/scripts/backup.sql
+	@echo $(SUCCESS)
+```
+
+
+
+## Self-signed certificates with Traefik
+
+### Demo
+
+```
+make
+```
+
+Navigate to https://localhost:4000/products to see Traefik in action.
+
+When viewing the api route in the browser, you will be asked to continue in Chrome it says "Your connection is not private" message. This is common when using self-signed certificates.
+
+Simply click "Advanced", and then "Proceed to ... (unsafe)". The message you get depends on your browser.
+
+Now do the same for the react app. Navigate to https://localhost:3000.
+
+In a production environment, working with Traefik is not much different. You just need to ensure your DNS is setup correctly and that you have ownership of the domain names you wish to use. There's plenty of articles on how to use Traefik in production and if you run into issues you can always post your question on the [Containous community forum](https://community.containo.us/) or see if your question has already been answered. 
+
+## Debugging Postgres In The Terminal
+
+We already have postgres setup but we still haven't discussed how to interact with it. Eventually you're going to want to enter the running postgres container yourself to make queries or debug. There three ways we can do this.
+
+The postgres container comes with a basic command line interface with postgres. This is your first option to start poking around. Run:
+
+```
+make debug-db
+```
+
+You should be automatically logged in. Inside the container run:
+
+```
+\dt
+select name, price from products
+```
+
+This is great we now have a user friendly terminal experience with syntax highlighting and auto completion. 
+
+
+
+## PGAdmin4: Debugging Postgres In The Browser
+
+### Demo
+
+Navigate to https://pgadmin.local in your browser. The the email and password is the same email and password you added to the pgadmin container service config under `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` environment variables found in the docker-compose.yml file.
+
+## Making Postgres Database Backups
+
+Making database backups of your postgres database is straight forward. This is a good this to explain how the your postgres database got seeded with data in the first place. Navigate to api/scripts/create-db.sh.
+
+### Demo
+
+```
+make dump
+```
 
 # Debugging A Go API
 
-# Self-Signed Certificates With Traefik
+### Demo
+
+```
+make debub-api
+```
+
+Go to /api/internal/handlers.go and place a break point in one of the handlers. Within vscode Click "Launch Remote" button in the debugger tab. Next navigate to the route that triggers the handler. You should see the editor pause where you placed the break point. 
+
+
 
 # Running Tests
+
+### Demo
+
+```
+make
+make test-client
+make test-api
+```
+
+Both commands essentially execute test commands in the running containers. While not necessary with unit tests, you should be aware of the fact that you can do this without creating additional containers specifically for tests in your docker-compose.yml file. 
+
+Another tip is you can build a test image targeting a test stage in a multi-stage build setup within the CI tool of your choice. You won't even need to run the image after building. If the build succeeds the tests have passed. If the test image fails to build something went wrong.
+
+```
+docker build --target test --tag reload/client:test ./client
+```
+
+
+
+# Conclusion
+
+I hope you learned a bunch about what is possible with Docker. Happy Coding.
