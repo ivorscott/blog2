@@ -726,6 +726,8 @@ Navigate to [https://pgadmin.local ](https://pgadmin.local)in your browser. Logi
 
 Making database backups of your Postgres database is straight forward. 
 
+
+
 ### Demo
 
 ```
@@ -779,6 +781,8 @@ The script only runs if a backup doesn't exist. That way, when you make a dump o
 
 
 # Debugging A Go API
+
+
 
 ### Demo
 
