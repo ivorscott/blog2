@@ -227,7 +227,7 @@ COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Running Containers
 
-`docker-compose` is a command line tool and configuration file that uses YAML. It was never designed for production. You should use it for local development and test automation. For production, you are better off using a production grade orchestrator like Docker Swarm over docker-compose -- [here's why](https://github.com/BretFisher/ama/issues/8).
+`docker-compose` is a command line tool and configuration file. It was never designed for production. You should use it for local development and test automation. For production, you are better off using a production grade orchestrator like Docker Swarm -- [here's why](https://github.com/BretFisher/ama/issues/8).
 
 With `docker-compose` we can run a collection of containers with one command. It makes running multiple containers far easier especially when containers have relationships and depend on one another.
 
@@ -400,7 +400,7 @@ secrets:
     file: ./secrets/postgres_user
 ```
 
-Create a `secrets` folder in the project root. Add the following secret files:
+Create a `secrets` folder in the project root. Add the following secret files.
 
 ```
 └── secrets
@@ -411,7 +411,13 @@ Create a `secrets` folder in the project root. Add the following secret files:
 
 In each file add some secret value.
 
-Navigate to your host machine's  `/etc/hosts` file. Add the following domains.
+Navigate to your host machine's  `/etc/hosts` file and open it. 
+
+```
+sudo vim /etc/hosts
+```
+
+Add the following domains.
 
 ```
 127.0.0.1       client.local api.local debug.api.local traefik.api.local pgadmin.local
@@ -423,7 +429,7 @@ Navigate to your host machine's  `/etc/hosts` file. Add the following domains.
 docker-compose up
 ```
 
-In two separate browser tabs, navigate to `https://api.local/products` first and then `https://client.local`
+In two separate browser tabs, navigate to <https://api.local/products> first and then <https://client.local>
 
 > **Note:**
 >
@@ -437,13 +443,13 @@ You should see the products being shown in the react app, meaning the `traefik`,
 docker-compose down --volumes
 ```
 
-You might have noticed that when docker-compose up created our volume and networks their names were prefixed with the `go-delve-reload` project directory name:
+You might have noticed that when `docker-compose up` created our volume and networks their names were prefixed with the `go-delve-reload` project directory name:
 
 ![](/media/screen-shot-2020-01-09-at-14.01.13.png)
 
 ![](/media/screen-shot-2020-01-09-at-14.01.46.png)
 
-In the next section, we'll use a makefile to create our postgres volume and required networks instead. Update the `docker-compose.yml` file to tell docker-compose that we expect the postgres volume and required networks to be created externally. Add the following:
+In the next section, we'll use a makefile to create our postgres volume and required networks. Update the `docker-compose.yml` file to tell docker-compose that we expect the postgres volume and required networks to be created externally. Add the following.
 
 ```
 volumes:
@@ -459,9 +465,9 @@ networks:
 
 # Makefiles
 
-It's often a hassle to type all of the various docker commands. [GNU Make](https://www.gnu.org/software/make/) is a build automation tool that automatically compiles executable programs and libraries from source code by reading files called Makefiles which specify how to build the target program.
+It can be a hassle to type various docker commands. [GNU Make](https://www.gnu.org/software/make/) is a build automation tool that automatically builds executable programs from source code by reading files called Makefiles.
 
-For example:
+Here's an example makefile:
 
 ```
 #!make 
@@ -469,18 +475,27 @@ hello: hello.c
   gcc hello.c -o hello
 ```
 
-It's worth noting targets and prerequisites don't have to be files. The main feature we care about is:
+The main feature we care about is:
 
 > \[ The ability ] to build and install your package without knowing the details of how that is done -- because these details are recorded in the makefile that you supply. 
 >
 > \-- https://www.gnu.org/software/make/
 
-The syntax is as follows:
+\
+The syntax is:
 
 ```
 target: prerequisite prerequisite prerequisite ...
 (TAB) commands 
 ```
+
+> **Note:**
+>
+>  targets and prerequisites don't have to be files. 
+
+In the command line, we would run this example makefile by typing `make` or `make hello`. Both would work because when a target is not specified the first target in the makefile is executed. 
+
+## Creating The Makefile
 
 Create a `makefile` in your project root and open it. 
 
@@ -506,7 +521,7 @@ service ?= api
 
 all: traefik-network postgres-network postgres-volume
 	@echo [ starting client '&' api... ]
-	docker-compose up traefik client api db pgadmin
+	docker-compose up --build traefik client api db pgadmin
 
 traefik-network:
 ifeq (,$(findstring traefik-public,$(NETWORKS)))
@@ -560,10 +575,6 @@ debug-api:
 	docker-compose up traefik debug-api db pgadmin
 
 debug-db:
-	@echo [ debugging postgres database... ]
-	@# basic command line interface for postgres 
-	@# make exec user="$(POSTGRES_USER)" service="db" cmd="bash -c 'psql --dbname $(POSTGRES_DB)'"
-
 	@# advanced command line interface for postgres
 	@# includes auto-completion and syntax highlighting. https://www.pgcli.com/
 	@docker run -it --rm --net postgres dencold/pgcli postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/$(POSTGRES_DB)
@@ -572,13 +583,35 @@ dump:
 	@echo [ dumping postgres backup for $(POSTGRES_DB)... ]
 	@docker exec -it db pg_dump --username $(POSTGRES_USER) $(POSTGRES_DB) > ./api/scripts/backup.sql
 	@echo $(SUCCESS)
+
+.PHONY: all
+.PHONY: traefik-network
+.PHONY: postgres-network
+.PHONY: postgres-volume
+.PHONY: api
+.PHONY: down
+.PHONY: tidy
+.PHONY: exec
+.PHONY: test-client
+.PHONY: test-api
+.PHONY: debug-api
+.PHONY: debug-db
+.PHONY: dump
 ```
 
-Each target is self documented with an `echo` command that prints to the console exactly what it does. When you execute a target, each corresponding command instruction will be printed to the terminal. 
+### Demo
 
-Using the "@" symbol hides a particular command instruction from the terminal output but it will still be executed. The "@#" hides both the command from execution and from terminal output. 
+```
+make
+```
 
-Variables can be defined at the top of the Makefile and referenced later. 
+When you execute a target, each command in the target's command body will be printed to stdout in a self documenting way and then executed. If you don't want a command printed to stdout but you want it executed, you can add the "@" symbol before it. Makefile comments are preceded by a "#" symbol. Using "@#" before a command will hide it from stdout and never execute.
+
+I added documentation to every target using `echo` to describe what each one does. 
+
+## Variables
+
+Variables can be defined at the top of a Makefile and referenced later. 
 
 ```
 #!make
@@ -599,54 +632,117 @@ target:
 
 ## Phony Targets
 
+A makefile can't distinguish between a file target and a phony target.
+
 > A phony target is one that is not really the name of a file; rather it is just a name for a recipe to be executed when you make an explicit request. There are two reasons to use a phony target: to avoid a conflict with a file of the same name, and to improve performance.
 >
 > \-- https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
 
-Essentially a makefile can't distinguish between a file target and a phony target. Each of our commands are Phony Targets.
+ Each of our commands are `.PHONY:` targets because they don't represent files.
 
-### Demo
-
-```
-make
-```
-
-
+### 
 
 ## Debugging Postgres In The Terminal
 
-We already have postgres setup but we still haven't discussed how to interact with it. Eventually you're going to want to enter the running postgres container yourself to make queries or debug. There three ways we can do this.
+We still haven't discussed how to interact with it Postgres. Eventually you're going to want to enter the running Postgres container to make queries or debug.
 
-The postgres container comes with a basic command line interface with postgres. This is your first option to start poking around. Run:
+### Demo
 
 ```
 make debug-db
 ```
 
-You should be automatically logged in. Inside the container run:
+You should be automatically logged in. Run a couple commands to get a feel for it.
 
 ```
 \dt
+```
+
+Then:
+
+```
 select name, price from products
 ```
+
+The `debug-db` target uses an advanced command line interface for Postgres called [pgcli](https://www.pgcli.com/).
 
 This is great we now have a user friendly terminal experience with syntax highlighting and auto completion. 
 
 ## PGAdmin4: Debugging Postgres In The Browser
 
+Not everyone likes the terminal experience when working with Postgres. We also have a browser option using [pgAdmin4](https://www.pgadmin.org/download/pgadmin-4-container/). 
+
+To login, the email is `test@example.com` and the password is `SuperSecret.` To change these values you will need to update the `docker-compose.yml` file. Simply update the hardcoded environment variables `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` to whatever you want.
+
 ### Demo
 
-Navigate to https://pgadmin.local in your browser. The the email and password is the same email and password you added to the pgadmin container service config under `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` environment variables found in the docker-compose.yml file.
+Navigate to [https://pgadmin.local ](https://pgadmin.local)in your browser. Login.
+
+![](/media/screen-shot-2020-01-09-at-20.58.30.png)
+
+![](/media/screen-shot-2020-01-09-at-20.59.11.png)
+
+![](/media/screen-shot-2020-01-09-at-21.00.08.png)
+
+![](/media/screen-shot-2020-01-09-at-21.03.59.png)
+
+![](/media/screen-shot-2020-01-09-at-21.04.07.png)
 
 ## Making Postgres Database Backups
 
-Making database backups of your postgres database is straight forward. This is a good this to explain how the your postgres database got seeded with data in the first place. Navigate to api/scripts/create-db.sh.
+Making database backups of your Postgres database is straight forward. 
 
 ### Demo
 
 ```
 make dump
 ```
+
+You're probably wondering how the Postgres database got seeded with data in the first place.
+
+The official Postgres image states: 
+
+> If you would like to do additional initialization in an image derived from this one, add one or more \*.sql, \*.sql.gz, or \*.sh scripts under /docker-entrypoint-initdb.d (creating the directory if necessary). After the entrypoint calls initdb to create the default postgres user and database, it will run any \*.sql files, run any executable \*.sh scripts, and source any non-executable \*.sh scripts found in that directory to do further initialization before starting the service.
+>
+> \-- https://hub.docker.com/_/postgres
+
+So I put a database creation script in the api located under `api/scripts/create-db.sh`.
+
+```
+#!/bin/bash
+set -e
+
+if [ ! -f "/docker-entrypoint-initdb.d/backup.sql" ]; then
+
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" -- <<-EOSQL
+    CREATE TABLE products (
+        id serial primary key,
+	    name varchar(100) not null,
+	    price real not null,
+	    description varchar(100) not null,
+	    created timestamp without time zone default (now() at time zone 'utc')
+    );
+    INSERT INTO products (name, price, description)
+    VALUES
+        ('Xbox One X', 499.00, 'Eighth-generation home video game console developed by Microsoft.'),
+        ('Playsation 4', 299.00, 'Eighth-generation home video game console developed by Sony Interactive Entertainment.'),
+        ('Nintendo Switch', 299.00, 'Hybrid console that can be used as a stationary and portable device developed by Nintendo.');
+    SELECT name, price from products;
+EOSQL
+fi
+```
+
+In the `docker-compose.yml` file, the `create-db.sh` script is bind mounted into the container at the expected path. 
+
+```
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./api/scripts/:/docker-entrypoint-initdb.d/
+```
+
+The script only runs if a backup doesn't exist. That way, when you make a dump of the backup, (which is automatically placed in the `api/scripts` directory), if we were to remove the database volume and start over, the next time around, the `create-db.sh` would not run and only the backup would be picked up.
+
+
 
 # Debugging A Go API
 
