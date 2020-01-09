@@ -47,7 +47,7 @@ cd go-delve-reload
 git checkout starter
 ```
 
-Create a hidden folder named `.vscode` and then a file named `launch.json` under it.
+Create a hidden folder named `.vscode` and add a file named `launch.json` under it.
 
 ```
 mkdir .vscode
@@ -75,27 +75,32 @@ Add the following contents to `launch.json`.
 }
 ```
 
-This above config will allow VSCode to remotely attach to the delve debugger inside the api container. 
+The above config will allow VSCode to remotely attach to the delve debugger inside the api container. 
 
 # Building Images
 
 ### Creating the Go API Dockerfile
 
-Make a new `Dockerfile` for the api folder and open it in your editor. Add the following contents:
+Make a new `Dockerfile` for the `api` folder and open it in your editor. Add the following:
 
 ```
 # 1. FROM sets the baseImage to use for subsequent instructions.
-# Extend the official golang image as the base stage
+# Use the Golang image as the base stage of a multi-stage routine
 FROM golang:1.13.5 as base
 
 # 2. WORKDIR sets the working directory for any subsequent COPY, CMD, or RUN instructions
+# Change directory
 WORKDIR /api
 
-# 3. COPY copy files or folders from source to the destination path in the image's filesystem# Copy the api code into /api in the image filesystemCOPY . . 
+# 3. COPY copy files or folders from source to the destination path in the image's filesystem
+# Copy the api code into /api in the image's filesystem
+COPY . . 
 
-# 4. RUN executes commands on top of the current image as a new layer and commit the results.# Install go module dependencies to the image filesystemRUN go mod download
+# 4. RUN executes commands on top of the current image as a new layer and commit the results.
+# Install go module dependencies in the image's filesystem
+RUN go mod download
 
-# 5. Extend the base stage and create a new stage called dev
+# 5. Extend the base stage to create a new stage named dev
 FROM base as dev
 
 # 6. ENV sets an environment variable
@@ -103,22 +108,23 @@ FROM base as dev
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
-# 7. Change the working directory
+# 7. Change directory
 WORKDIR $GOPATH/src
 
-# 8. Install the development dependencies in $GOPATH/src
+# 8. Install development dependencies in $GOPATH/src
 RUN go get github.com/go-delve/delve/cmd/dlv
 RUN go get github.com/githubnemo/CompileDaemon
 
-# 9. Change the working directory back to /api
+# 9. Change directory
 WORKDIR /api
 
 # 10. Provide meta data about the ports the container must EXPOSE
 # port 4000 -> api port
-# port 8888 -> debuggable api port
-# port 2345 -> debugger portEXPOSE 4000 8888 2345
+# port 2345 -> debugger port
+EXPOSE 4000 2345
 
-# 11. CMD provide defaults for an executing container. CMD ["go", "run" "./cmd/api"]
+# 11. CMD provide defaults for an executing container.
+CMD ["go", "run" "./cmd/api"]
 ```
 
 ### Demo
@@ -144,23 +150,23 @@ If you publish a private or public image to [DockerHub](https://hub.docker.com/)
 Add a new `Dockerfile` for the client folder. Open it in your editor. Add the following contents:
 
 ```
-# 1. Extend the official node image and create a new stage called base
+# 1. Use the Node image as the base stage of a multi-stage routine
 FROM node:10.15.0-alpine as base
 
-# 2. Create the NODE_ENV Environment variable
+# 2. Set the NODE_ENV Environment variable
 ENV NODE_ENV=production
 
 # 3. Set the working directory
 WORKDIR /client
 
-# 4. Copy both package.json and package-lock.json into /client in the image filesystem
+# 4. Copy both package.json and package-lock.json into /client in the image's filesystem
 COPY package*.json ./
 
 # 5. Install the production node_modules and clean up the cache 
 RUN npm ci \ 
     && npm cache clean --force
 
-# 5. Extend the base stage and create a new stage called dev
+# 5. Extend the base stage to create a new stage named dev
 FROM base as dev
 
 # 6. Set the NODE_ENV and PATH Environment variables
@@ -181,14 +187,13 @@ RUN npm i --only=development \
     && npm cache clean --force
 
 # 11. Patch create-react-app bug preventing self-signed certificate usage
-
 # https://github.com/facebook/create-react-app/issues/8075
 COPY patch.js /client/node_modules/react-dev-utils/webpackHotDevClient.js
 
 # 12. Print npm config for debugging purposes
 RUN npm config list
 
-# 13. Change the working directory
+# 13. Change directory
 WORKDIR /client/app
 
 # 14. Provide defaults for an executing container. 
@@ -203,13 +208,13 @@ COPY . .
 # 17. Run node_module vulnerability checks
 RUN npm audit
 
-# 18. Extend the test stage and create a new stage called build-stage
+# 18. Extend the test stage to create a new stage named build-stage
 FROM test as build-stage
 
 # 19. Build the production static assets
 RUN npm run build
 
-# 20. Extend the official nginx image and create a new stage called prod
+# 20. Extend Nginx image to create a new stage named prod
 FROM nginx:1.15-alpine as prod
 
 # 21. Provide meta data about the port the container must EXPOSE
@@ -539,8 +544,6 @@ dump:
 	@echo $(SUCCESS)
 ```
 
-
-
 ## Self-signed certificates with Traefik
 
 ### Demo
@@ -578,8 +581,6 @@ select name, price from products
 
 This is great we now have a user friendly terminal experience with syntax highlighting and auto completion. 
 
-
-
 ## PGAdmin4: Debugging Postgres In The Browser
 
 ### Demo
@@ -606,8 +607,6 @@ make debub-api
 
 Go to /api/internal/handlers.go and place a break point in one of the handlers. Within vscode Click "Launch Remote" button in the debugger tab. Next navigate to the route that triggers the handler. You should see the editor pause where you placed the break point. 
 
-
-
 # Running Tests
 
 ### Demo
@@ -625,8 +624,6 @@ Another tip is you can build a test image targeting a test stage in a multi-stag
 ```
 docker build --target test --tag reload/client:test ./client
 ```
-
-
 
 # Conclusion
 
