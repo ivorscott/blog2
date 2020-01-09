@@ -11,11 +11,7 @@ tags:
 ---
 # Introduction
 
-I expect you to be familiar with go and react. I won't teach you how to make a react app or a go api, rather we will focus our attention on building docker tooling around an existing full stack sample project.
-
-At the end of this tutorial you will create the ultimate Go and React development environment with Docker. 
-
-
+In this tutorial we are going to be setting up a Go and React development environment with Docker. 
 
 # Contents
 
@@ -27,25 +23,23 @@ At the end of this tutorial you will create the ultimate Go and React developmen
 * Self-Signed Certificates With Traefik
 * Running Tests
 
-
-
 ## Requirements
 
 * [VSCode](https://code.visualstudio.com/)
 * [Docker](https://www.docker.com/products/docker-desktop)
 
-
-
 # Setting up VSCode
 
-Download VSCode if you haven't already (its free). Then install the following extensions:
+Open VSCode or install  before you continue.
+
+Install thes extensions:
 
 1. [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) 
    Adds rich language support for the Go language.
 2. [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
    Adds syntax highlighting, commands, hover tips, and linting for docker related files.
 
-Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout out the `starter` branch if you haven't already. 
+Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout the `starter` branch.
 
 ```
 git clone https://github.com/ivorscott/go-delve-reload
@@ -53,7 +47,11 @@ cd go-delve-reload
 git checkout starter
 ```
 
-Create a hidden folder named `.vscode` and add a file named `launch.json` under it.
+
+
+The above config will allow VSCode to remotely attach to the delve debugger inside the api container.
+
+Create a hidden folder named `.vscode` and add `launch.json` under it.
 
 ```
 mkdir .vscode
@@ -80,8 +78,6 @@ Add the following contents to `launch.json`.
   ]
 }
 ```
-
-The above config will allow VSCode to remotely attach to the delve debugger inside the api container. 
 
 
 
@@ -135,8 +131,6 @@ EXPOSE 4000 2345
 CMD ["go", "run" "./cmd/api"]
 ```
 
-
-
 ### Demo
 
 In the root directory run the following:
@@ -151,11 +145,9 @@ The flag `--target` specifies that we only want to target the `dev` stage in the
 
 [Multi-stage](https://docs.docker.com/develop/develop-images/multistage-build/) builds help us apply separation of concerns. A multi-stage setup allows you to define different stages of a single Dockerfile and reference them later. In our api Dockerfile, we declared the name of our first stage `as base`.
 
-The flag `--tag` specifies an [image tag](https://docs.docker.com/engine/reference/commandline/tag/) or name we can use to reference the new image, it is tagged `demo/api`.
+`--tag` specifies an [image tag](https://docs.docker.com/engine/reference/commandline/tag/). An image tag is just a name we can use to reference new image, it is tagged `demo/api`.
 
 If you publish a private or public image to [DockerHub](https://hub.docker.com/) (the official Docker image repository) the format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username.
-
-
 
 ### Creating the React app Dockerfile
 
@@ -236,8 +228,6 @@ EXPOSE 80
 COPY --from=build-stage /client/app/build /usr/share/nginx/html
 COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 ```
-
-
 
 # Running Containers
 
@@ -437,8 +427,6 @@ Add the following domains.
 127.0.0.1       client.local api.local debug.api.local traefik.api.local pgadmin.local
 ```
 
-
-
 ### Demo
 
 ```
@@ -479,8 +467,6 @@ networks:
     external: true
 ```
 
-
-
 # Makefiles
 
 It can be a hassle to type various docker commands. [GNU Make](https://www.gnu.org/software/make/) is a build automation tool that automatically builds executable programs from source code by reading files called Makefiles.
@@ -512,8 +498,6 @@ target: prerequisite prerequisite prerequisite ...
 >  targets and prerequisites don't have to be files. 
 
 In the command line, we would run this example makefile by typing `make` or `make hello`. Both would work because when a target is not specified the first target in the makefile is executed. 
-
-
 
 ## Creating The Makefile
 
@@ -619,8 +603,6 @@ dump:
 .PHONY: dump
 ```
 
-
-
 ### Demo
 
 ```
@@ -630,8 +612,6 @@ make
 When you execute a target, each command in the target's command body will be printed to stdout in a self documenting way and then executed. If you don't want a command printed to stdout but you want it executed, you can add the "@" symbol before it. Makefile comments are preceded by a "#" symbol. Using "@#" before a command will hide it from stdout and never execute.
 
 I added documentation to every target using `echo` to describe what each one does. 
-
-
 
 ## Variables
 
@@ -654,8 +634,6 @@ target:
     echo ${MY_ENV_VAR} 
 ```
 
-
-
 ## Phony Targets
 
 A makefile can't distinguish between a file target and a phony target.
@@ -671,8 +649,6 @@ A makefile can't distinguish between a file target and a phony target.
 ## Debugging Postgres In The Terminal
 
 We still haven't discussed how to interact with it Postgres. Eventually you're going to want to enter the running Postgres container to make queries or debug.
-
-
 
 ### Demo
 
@@ -696,15 +672,11 @@ The `debug-db` target uses an advanced command line interface for Postgres calle
 
 This is great we now have a user friendly terminal experience with syntax highlighting and auto completion. 
 
-
-
 ## PGAdmin4: Debugging Postgres In The Browser
 
 Not everyone likes the terminal experience when working with Postgres. We also have a browser option using [pgAdmin4](https://www.pgadmin.org/download/pgadmin-4-container/). 
 
 To login, the email is `test@example.com` and the password is `SuperSecret.` To change these values you will need to update the `docker-compose.yml` file. Simply update the hardcoded environment variables `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` to whatever you want.
-
-
 
 ### Demo
 
@@ -720,13 +692,9 @@ Navigate to [https://pgadmin.local ](https://pgadmin.local)in your browser. Logi
 
 ![](/media/screen-shot-2020-01-09-at-21.04.07.png)
 
-
-
 ## Making Postgres Database Backups
 
 Making database backups of your Postgres database is straight forward. 
-
-
 
 ### Demo
 
@@ -778,11 +746,7 @@ In the `docker-compose.yml` file, the `create-db.sh` script is bind mounted into
 
 The script only runs if a backup doesn't exist. That way, when you make a dump of the backup, (which is automatically placed in the `api/scripts` directory), if we were to remove the database volume and start over, the next time around, the `create-db.sh` would not run and only the backup would be picked up.
 
-
-
 # Debugging A Go API
-
-
 
 ### Demo
 
@@ -792,29 +756,18 @@ make debub-api
 
 Go to /api/internal/handlers.go and place a break point in one of the handlers. Within vscode Click "Launch Remote" button in the debugger tab. Next navigate to the route that triggers the handler. You should see the editor pause where you placed the break point. 
 
-
-
-# Running Tests
-
-
+# Test
 
 ### Demo
 
 ```
-make
 make test-client
 make test-api
 ```
 
-Both commands essentially execute test commands in the running containers. While not necessary with unit tests, you should be aware of the fact that you can do this without creating additional containers specifically for tests in your docker-compose.yml file. 
-
-Another tip is you can build a test image targeting a test stage in a multi-stage build setup within the CI tool of your choice. You won't even need to run the image after building. If the build succeeds the tests have passed. If the test image fails to build something went wrong.
-
 ```
 docker build --target test --tag demo/client:test ./client
 ```
-
-
 
 # Conclusion
 
