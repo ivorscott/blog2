@@ -464,7 +464,8 @@ It's often a hassle to type all of the various docker commands. [GNU Make](https
 For example:
 
 ```
-#!make hello: hello.c
+#!make 
+hello: hello.c
   gcc hello.c -o hello
 ```
 
