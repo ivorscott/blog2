@@ -14,6 +14,6 @@ Mass Mutual Financial Group, Siemens, Akelius
 
 Design: Sketch, Invision, Balsamiq
 
-Development: Golang, TypeScript, React, CSS-in-JS GatsbyJS, NodeJS, MongoDB, Postgres
+Development: Golang, TypeScript, React, CSS-in-JS, GatsbyJS, NodeJS, MongoDB, Postgres
 
 Deployment: Docker, Traefik, AWS, Digital Ocean, Docker Swarm, Kubernetes, Contentful, Netlify, Drone, Portainer
