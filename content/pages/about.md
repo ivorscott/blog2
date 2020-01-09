@@ -6,15 +6,13 @@ draft: false
 ---
 I'm a huge fan of Docker and love using . 
 
-Currently living in Berlin. Golang and K8s have caught my  lately.
-
-
+Currently living in Berlin. Golang and K8s has caught my lately.
 
 ### Where I've Worked
 
 Mass Mutual Financial Group, Siemens, Akelius
 
-### Things I U
+### Things I Us
 
 Design: Sketch, Invision, Balsamiq
 
