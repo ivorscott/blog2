@@ -4,7 +4,7 @@ title: About me
 slug: /pages/about
 draft: false
 ---
-I'm a huge fan of Docker and love using . 
+I'm a huge fan of Docker and love using it. 
 
 Currently living in Berlin. Golang and K8s has caught my eye lately.
 
@@ -12,7 +12,7 @@ Currently living in Berlin. Golang and K8s has caught my eye lately.
 
 Mass Mutual Financial Group, Siemens, Akelius
 
-### Things I Us
+### Things I Use
 
 Design: Sketch, Invision, Balsamiq
 
