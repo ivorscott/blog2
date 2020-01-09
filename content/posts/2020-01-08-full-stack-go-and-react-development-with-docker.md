@@ -581,7 +581,8 @@ Using the "@" symbol hides a particular command instruction from the terminal ou
 Variables can be defined at the top of the Makefile and referenced later. 
 
 ```
-#!makeNETWORKS="$(shell docker network ls)"
+#!make
+NETWORKS="$(shell docker network ls)"
 ```
 
 Using the syntax `$(shell <command>)` is one way to execute a command and store its value in a variable.
@@ -589,7 +590,11 @@ Using the syntax `$(shell <command>)` is one way to execute a command and store 
 Environment variables from a .env file can be referenced as long as you include it at the top of the makefile.
 
 ```
-#!makeinclude .envtarget:     echo ${MY_ENV_VAR} 
+#!make
+include .env
+
+target:     
+    echo ${MY_ENV_VAR} 
 ```
 
 ## Phony Targets
@@ -668,7 +673,7 @@ Both commands essentially execute test commands in the running containers. While
 Another tip is you can build a test image targeting a test stage in a multi-stage build setup within the CI tool of your choice. You won't even need to run the image after building. If the build succeeds the tests have passed. If the test image fails to build something went wrong.
 
 ```
-docker build --target test --tag reload/client:test ./client
+docker build --target test --tag demo/client:test ./client
 ```
 
 # Conclusion
