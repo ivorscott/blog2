@@ -4,29 +4,18 @@ title: About me
 slug: /pages/about
 draft: false
 ---
+I'm a huge fan of Docker and love using it. 
 
-I am a self-motivated full stack developer with two Fine Arts degrees leveraging my creativity in software. I communicate effectively and learn quick. I develop strong working relationships with others and enjoy what I do.
+Currently living in Berlin. Golang and K8s has caught my eye lately.
 
 ### Where I've Worked
 
-Mass Mutual Financial Group, Siemens
+Mass Mutual Financial Group, Siemens, Akelius
 
 ### Things I Use
 
-D3
-Scss
-Jest
-React
-NodeJs
-Docker
-Flexbox
-Cypress
-GraphQL
-GatsbyJs
-Wordpress
-Golang
-Javascript
-Typescript
-Firebase
-Digital Ocean
-Docker Swarm
+Design: Sketch, Invision, Balsamiq
+
+Development: Golang, TypeScript, React, CSS-in-JS, GatsbyJS, NodeJS, MongoDB, Postgres
+
+Deployment: Docker, Traefik, AWS, Digital Ocean, Docker Swarm, Contentful, Netlify, Drone, Portainer
