@@ -227,9 +227,9 @@ COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Running Containers
 
-Docker compose is a command line tools and configuration file that uses YAML. It is only meant for local development and test automation. For production you are better off using a production grade orchestrator like Docker Swarm or Kubernetes.
+`docker-compose` is a command line tool and configuration file that uses YAML. It was never designed for production. You should use it for local development and test automation. For production, you are better off using a production grade orchestrator like Docker Swarm over docker-compose -- [here's why](https://github.com/BretFisher/ama/issues/8).
 
-With Docker Compose we can run a collection of containers with one command which becomes necessary when containers have relationships and depend on one another.
+With `docker-compose` we can run a collection of containers with one command. It makes running multiple containers far easier especially when containers have relationships and depend on one another.
 
 In the project root, create a `docker-compose.yml` file and open it.
 
@@ -237,7 +237,7 @@ In the project root, create a `docker-compose.yml` file and open it.
 touch docker-compose.yml        
 ```
 
-Add the following content:
+Add the following:
 
 ```
 version: "3.7"
@@ -386,13 +386,10 @@ services:
 
 volumes:
   postgres:
-    external: true
 
 networks:
   postgres:
-    external: true
   traefik-public:
-    external: true
 
 secrets:
   postgres_db:
@@ -403,19 +400,79 @@ secrets:
     file: ./secrets/postgres_user
 ```
 
+Create a `secrets` folder in the project root. Add the following secret files:
+
+```
+└── secrets
+   ├── postgres_db
+   ├── postgres_passwd
+   └── postgres_user
+```
+
+In each file add some secret value.
+
+Navigate to your host machine's  `/etc/hosts` file. Add the following domains.
+
+```
+127.0.0.1       client.local api.local debug.api.local traefik.api.local pgadmin.local
+```
+
 ### Demo
 
 ```
 docker-compose up
 ```
 
+In two separate browser tabs, navigate to `https://api.local/products` first and then `https://client.local`
+
+> **Note:**
+>
+> In your browser, you may see warnings prompting you to click a link to continue to the requested page. This is quite common when using self-signed certificates and shouldn't be a reason of concern.
+>
+> The reason we are using self-signed certificates in the first place is to replicate the production environment as much as possible.
+
+You should see the products being shown in the react app, meaning the `traefik`, `api`, `client`, and `db` containers are communicating successfully.
+
 ```
-docker-compose down
+docker-compose down --volumes
+```
+
+You might have noticed that when docker-compose up created our volume and networks their names were prefixed with the `go-delve-reload` project directory name:
+
+![](/media/screen-shot-2020-01-09-at-14.01.13.png)
+
+![](/media/screen-shot-2020-01-09-at-14.01.46.png)
+
+In the next section, we'll use a makefile to create our postgres volume and required networks instead. Update the `docker-compose.yml` file to tell docker-compose that we expect the postgres volume and required networks to be created externally. Add the following:
+
+```
+volumes:
+  postgres:
+    external: true
+
+networks:
+  postgres:
+    external: true
+  traefik-public:
+    external: true
 ```
 
 # Makefiles
 
-It's often a hassle to type all of the various docker commands even when you know them. GNU Make is an automation tool that can abstract away the commands for us.
+It's often a hassle to type all of the various docker commands. [GNU Make](https://www.gnu.org/software/make/) is a build automation tool that automatically compiles executable programs and libraries from source code by reading files called Makefiles which specify how to build the target program.
+
+For example:
+
+```
+#!make hello: hello.c
+  gcc hello.c -o hello
+```
+
+It's worth noting targets and prerequisites don't have to be files. The main feature we care about is:
+
+> \[ The ability ] to build and install your package without knowing the details of how that is done -- because these details are recorded in the makefile that you supply. 
+>
+> \-- https://www.gnu.org/software/make/
 
 The syntax is as follows:
 
@@ -423,34 +480,6 @@ The syntax is as follows:
 target: prerequisite prerequisite prerequisite ...
 (TAB) commands 
 ```
-
-Targets that do not represent files are known as phony targets.
-
-Phony targets are always executed. Since makefile can distinguish between a file target and a phony target conflicts may arise in development. For example, your in a directory with a file named test and inside a makefile in the same directory you have a target name test without prerequisites:
-
-```
-test: 
-    echo test something
-```
-
-Running make test in this scenario may not work as you expect. The output of this command would be `test is up to date`. This is because GNU make sees the test file and then the target without prerequisites and determines that you don't have any commands to perform because everything is up to date. GNU is make does want to perform an unnecessary action. This is an intended optimization needed for compiling executables. Most of the time, if you are using GNU make to compile executable files you don't want to compile files that don't need to be compiled because they haven't changed.
-
-You can by pass this by indicating that the target is a phony target. The phony target declaration can appear anywhere in the makefile, above or below the target it relates to.
-
-```
-test:
-    echo test something
-
-.PHONY: test
-```
-
-With this, `make test` finally runs the command, and no longer shows the test is up to date response.
-
-Just remember it's only necessary to use `.PHONY: target` when there is a filename conflict with a target defined in a makefile. In the above example, if the test file didn't exist then there would had been no reason to apply .PHONY: test.  
-
-Alright, that's it for makefiles. You can read more about PHONY Targets [here](https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html). In this tutorial project you won't need them but you should be aware of them and how they work.
-
-## Creating the Makefile
 
 Create a `makefile` in your project root and open it. 
 
@@ -544,7 +573,31 @@ dump:
 	@echo $(SUCCESS)
 ```
 
-## Self-signed certificates with Traefik
+Each target is self documented with an `echo` command that prints to the console exactly what it does. When you execute a target, each corresponding command instruction will be printed to the terminal. 
+
+Using the "@" symbol hides a particular command instruction from the terminal output but it will still be executed. The "@#" hides both the command from execution and from terminal output. 
+
+Variables can be defined at the top of the Makefile and referenced later. 
+
+```
+#!makeNETWORKS="$(shell docker network ls)"
+```
+
+Using the syntax `$(shell <command>)` is one way to execute a command and store its value in a variable.
+
+Environment variables from a .env file can be referenced as long as you include it at the top of the makefile.
+
+```
+#!makeinclude .envtarget:     echo ${MY_ENV_VAR} 
+```
+
+## Phony Targets
+
+> A phony target is one that is not really the name of a file; rather it is just a name for a recipe to be executed when you make an explicit request. There are two reasons to use a phony target: to avoid a conflict with a file of the same name, and to improve performance.
+>
+> \-- https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
+
+Essentially a makefile can't distinguish between a file target and a phony target. Each of our commands are Phony Targets.
 
 ### Demo
 
@@ -552,15 +605,7 @@ dump:
 make
 ```
 
-Navigate to https://localhost:4000/products to see Traefik in action.
 
-When viewing the api route in the browser, you will be asked to continue in Chrome it says "Your connection is not private" message. This is common when using self-signed certificates.
-
-Simply click "Advanced", and then "Proceed to ... (unsafe)". The message you get depends on your browser.
-
-Now do the same for the react app. Navigate to https://localhost:3000.
-
-In a production environment, working with Traefik is not much different. You just need to ensure your DNS is setup correctly and that you have ownership of the domain names you wish to use. There's plenty of articles on how to use Traefik in production and if you run into issues you can always post your question on the [Containous community forum](https://community.containo.us/) or see if your question has already been answered. 
 
 ## Debugging Postgres In The Terminal
 
