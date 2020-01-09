@@ -6,7 +6,7 @@ draft: false
 ---
 I'm a huge fan of Docker and love using . 
 
-Currently living in Berlin. Golang and K8s has caught my lately.
+Currently living in Berlin. Golang and K8s has caught my eye lately.
 
 ### Where I've Worked
 
