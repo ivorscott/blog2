@@ -10,10 +10,10 @@ I'm a full stack developer with two fine arts degrees, currently living in Berli
 
 Mass Mutual Financial Group, Siemens, Akelius
 
-### Things I Like
+### Things I U
 
 Design: Sketch, Invision, Balsamiq
 
-Development: Golang, TypeScript, React, GatsbyJS, D3, Jest, NodeJS, MongoDB, Postgres, Postman, CSS-in-JS 
+Development: Golang, TypeScript, React, CSS-in-JS GatsbyJS, NodeJS, MongoDB, Postgres
 
 Deployment: Docker, Traefik, AWS, Digital Ocean, Docker Swarm, Kubernetes, Contentful, Netlify, Drone, Portainer
