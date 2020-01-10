@@ -14,8 +14,8 @@ Mass Mutual Financial Group, Siemens, Akelius
 
 ### Things I Use
 
-Design: Sketch, Invision, Balsamiq
+Sketch, Invision, Balsamiq
 
-Development: Golang, TypeScript, React, CSS-in-JS, GatsbyJS, NodeJS, MongoDB, Postgres
+Golang, TypeScript, React, CSS-in-JS, GatsbyJS, Contentful, NodeJS, MongoDB, Postgres
 
-Deployment: Docker, Traefik, AWS, Digital Ocean, Docker Swarm, Contentful, Netlify, Drone, Portainer
+Docker, Traefik, AWS, Digital Ocean, Docker Swarm, Netlify, Drone, Portainer
