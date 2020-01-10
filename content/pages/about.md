@@ -4,9 +4,7 @@ title: About me
 slug: /pages/about
 draft: false
 ---
-I'm a huge fan of Docker and love using it. 
-
-Currently living in Berlin. Golang and K8s has caught my eye lately.
+I'm a huge fan of Docker and love using it. Currently living in Berlin. Golang and K8s has caught my eye lately.
 
 ### Where I've Worked
 
