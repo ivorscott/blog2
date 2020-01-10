@@ -656,6 +656,8 @@ Variables can be defined at the top of a Makefile and referenced later.
 NETWORKS="$(shell docker network ls)"
 ```
 
+## Environment Variables
+
 Using the syntax `$(shell <command>)` is one way to execute a command and store its value in a variable.
 
 Environment variables from a .env file can be referenced as long as you include it at the top of the makefile.
@@ -677,8 +679,6 @@ A makefile can't distinguish between a file target and a phony target.
 > \-- https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
 
  Each of our commands are `.PHONY:` targets because they don't represent files.
-
-### 
 
 ## Debugging Postgres In The Terminal
 
@@ -740,11 +740,13 @@ You're probably wondering how the Postgres database got seeded with data in the 
 
 The official Postgres image states: 
 
-> If you would like to do additional initialization in an image derived from this one, add one or more \*.sql, \*.sql.gz, or \*.sh scripts under /docker-entrypoint-initdb.d (creating the directory if necessary). After the entrypoint calls initdb to create the default postgres user and database, it will run any \*.sql files, run any executable \*.sh scripts, and source any non-executable \*.sh scripts found in that directory to do further initialization before starting the service.
+> If you would like to do additional initialization in an image derived from this one, add one or more \*.sql, \*.sql.gz, or *.sh scripts under /docker-entrypoint-initdb.d (creating the directory if necessary).
+>
+> After the entrypoint calls initdb to create the default postgres user and database, it will run any \*.sql files, run any executable \*.sh scripts, and source any non-executable *.sh scripts found in that directory to do further initialization before starting the service.
 >
 > \-- https://hub.docker.com/_/postgres
 
-So I put a database creation script in the api located under `api/scripts/create-db.sh`.
+The database creation script located under `api/scripts/create-db.sh` is used to seed the database.
 
 ```
 #!/bin/bash
@@ -770,7 +772,7 @@ EOSQL
 fi
 ```
 
-In the `docker-compose.yml` file, the `create-db.sh` script is bind mounted into the container at the expected path. 
+In our docker-compose file, `create-db.sh` is bind mounted into the db container:
 
 ```
     volumes:
@@ -778,7 +780,7 @@ In the `docker-compose.yml` file, the `create-db.sh` script is bind mounted into
       - ./api/scripts/:/docker-entrypoint-initdb.d/
 ```
 
-The script only runs if a backup doesn't exist. That way, when you make a dump of the backup, (which is automatically placed in the `api/scripts` directory), if we were to remove the database volume and start over, the next time around, the `create-db.sh` would not run and only the backup would be picked up.
+The script only runs if a backup doesn't exist. That way, when you make a dump of the backup, (which is automatically placed in the `api/scripts` directory), if we were to remove the database volume and start over, the next time around, `create-db.sh` will not run and only the backup would be used.
 
 # Debugging A Go API
 
@@ -788,7 +790,7 @@ The script only runs if a backup doesn't exist. That way, when you make a dump o
 make debub-api
 ```
 
-Go to /api/internal/handlers.go and place a break point in one of the handlers. Within vscode Click "Launch Remote" button in the debugger tab. Next navigate to the route that triggers the handler. You should see the editor pause where you placed the break point. 
+Go to `/api/internal/handlers.go` and place a break point in one of the handlers. Within VSCode, Click "Launch Remote" button in the debugger tab. Next navigate to the route that triggers the handler. You should see the editor pause where you placed the break point. 
 
 # Test
 
