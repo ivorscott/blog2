@@ -1,43 +1,34 @@
 ---
 template: post
-title: Full Stack Go and React Development with Docker
-slug: fullstack-go-react-development-with-docker
+title: Fullstack Go and React Development Setup with Docker
+slug: go-react-development-setup-with-docker
 draft: true
 date: 2020-01-08T12:54:37.547Z
-description: Build a fullstack go and react developer environment with docker.
+description: Build a Go and React development setup with Docker.
 category: development
 tags:
   - Delve Docker Golang Makefile Postgres Traefik VSCode
 ---
 # Introduction
 
-In this tutorial we are going to be setting up a Go and React development environment with Docker. 
+In this tutorial we will build a Fullstack Go and React development setup with Docker.
 
-# Contents
+I'm expecting the reader to be interested in containers. I won't teach you how to make a react app or a go api. Despite the title, there's not much of a "full" stack here. The sample project is a landing page and 2 endpoints. 
 
-* Setting Up VSCode
-* Building Images
-* Running Containers
-* Live Reloading A Go API
-* Delve Debugging A Go API
-* Self-Signed Certificates With Traefik
-* Running Tests
+We will focus on:
+
+* VSCode Setup
+* Multi-stage Builds
+* Docker Compose
+* Live Reloading a Go API
+* Delve Debugging a Go API
+* Self-Signed Certificates with Traefik
+* Tests
 
 ## Requirements
 
 * [VSCode](https://code.visualstudio.com/)
 * [Docker](https://www.docker.com/products/docker-desktop)
-
-# Setting up VSCode
-
-Open VSCode or install  before you continue.
-
-Install thes extensions:
-
-1. [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) 
-   Adds rich language support for the Go language.
-2. [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
-   Adds syntax highlighting, commands, hover tips, and linting for docker related files.
 
 Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout the `starter` branch.
 
@@ -47,11 +38,32 @@ cd go-delve-reload
 git checkout starter
 ```
 
+# Setting up VSCode
 
+Open VSCode or [install it](https://code.visualstudio.com/download).
 
-The above config will allow VSCode to remotely attach to the delve debugger inside the api container.
+Install these two extensions:
 
-Create a hidden folder named `.vscode` and add `launch.json` under it.
+1. [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) 
+   Adds rich language support for the Go language.
+2. [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
+   Adds syntax highlighting, commands, hover tips, and linting for docker related files.
+
+## Mono Repos and Go Modules
+
+Our mono repo has two folders, one for the client; one for the api. When using Go modules, VSCode seems to complain when our api is not the project root. Right click below the project tree in the sidebar region to fix this. 
+
+Click on "Add Folder To Workspace" and select the `api` folder.
+
+![](/media/screen-shot-2020-01-10-at-03.02.17.png)
+
+![](/media/screen-shot-2020-01-10-at-03.08.24.png)
+
+## Setting VSCode for Debugging
+
+VSCode will need to attach to the delve debugger inside the go container.
+
+Create a hidden folder named `.vscode` and add `launch.json` to it.
 
 ```
 mkdir .vscode
@@ -79,13 +91,11 @@ Add the following contents to `launch.json`.
 }
 ```
 
-
-
 # Building Images
 
-### Creating the Go API Dockerfile
+### Creating the Golang Dockerfile
 
-Make a new `Dockerfile` for the `api` folder and open it in your editor. Add the following:
+Our api folder needs a `Dockerfile`. Create one and open it in your editor. Add the following:
 
 ```
 # 1. FROM sets the baseImage to use for subsequent instructions.
@@ -97,8 +107,8 @@ FROM golang:1.13.5 as base
 WORKDIR /api
 
 # 3. COPY copy files or folders from source to the destination path in the image's filesystem
-# Copy the api code into /api in the image's filesystem
-COPY . . 
+# Copy the go.mod and go.sum files to /api in the image's filesystem
+COPY go.* ./
 
 # 4. RUN executes commands on top of the current image as a new layer and commit the results.
 # Install go module dependencies in the image's filesystem
@@ -127,8 +137,29 @@ WORKDIR /api
 # port 2345 -> debugger port
 EXPOSE 4000 2345
 
-# 11. CMD provide defaults for an executing container.
-CMD ["go", "run" "./cmd/api"]
+# 11. Extend the dev stage to create a new stage named test
+FROM dev as test
+
+# 12. Copy the remaining api code into /api in the image's filesystem
+COPY . . 
+
+# 13. Run unit tests
+RUN go test -v ./...
+
+# 14. Extend the test stage to create a new stage named build-stage
+FROM test as build-stage
+
+# 15. Provide defaults for an executing container.
+RUN go build -o main ./cmd/api
+
+# 16. Extend the scratch stage to create a new stage named prod
+FROM scratch as prod
+
+# 17. Copy only the files we want from the build stage into the prod stage
+COPY --from=build-stage /api/main main
+
+# 18. CMD Provide defaults for an executing container. 
+CMD ["./main"]
 ```
 
 ### Demo
@@ -149,7 +180,7 @@ The flag `--target` specifies that we only want to target the `dev` stage in the
 
 If you publish a private or public image to [DockerHub](https://hub.docker.com/) (the official Docker image repository) the format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username.
 
-### Creating the React app Dockerfile
+### Creating the React Dockerfile
 
 Add a new `Dockerfile` for the client folder. Open it in your editor. Add the following contents:
 
@@ -212,19 +243,22 @@ COPY . .
 # 17. Run node_module vulnerability checks
 RUN npm audit
 
-# 18. Extend the test stage to create a new stage named build-stage
+# 18. Run unit tests
+RUN npm test
+
+# 19. Extend the test stage to create a new stage named build-stage
 FROM test as build-stage
 
-# 19. Build the production static assets
+# 20. Build the production static assets
 RUN npm run build
 
-# 20. Extend Nginx image to create a new stage named prod
+# 21. Extend Nginx image to create a new stage named prod
 FROM nginx:1.15-alpine as prod
 
-# 21. Provide meta data about the port the container must EXPOSE
+# 22. Provide meta data about the port the container must EXPOSE
 EXPOSE 80
 
-# 22. Copy only the files we want from the build stage into the prod stage
+# 23. Copy only the files we want from the build stage into the prod stage
 COPY --from=build-stage /client/app/build /usr/share/nginx/html
 COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 ```
