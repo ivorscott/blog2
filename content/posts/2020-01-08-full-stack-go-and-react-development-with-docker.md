@@ -11,11 +11,57 @@ tags:
 ---
 # Introduction
 
-In this tutorial we will build a Fullstack Go and React development setup with Docker.
+In this tutorial we will setup a Go and React development environment with Docker. 
 
-I'm expecting the reader to be interested in containers. I won't teach you how to make a react app or a go api. Despite the title, there's not much of a "full" stack here. The sample project is a landing page and 2 endpoints. 
+I won't teach you every painstaking detail about creating a react app or even a go api. I expect you to be familiar with fullstack development already. It's quite fine if you're new to Docker though. I'll explain concepts when needed. So relax, you'll be able to copy and paste code as you go.
 
-We will focus on:
+The example project I introduce is far from complete. The project starter is a simple mono repo containing two folders. 
+
+```
+├── README.md
+├── api
+├── client
+```
+
+Step by step, I'll take you through a typical docker workflow.  At the end of this tutorial you'll be ready to Dockerize your own fullstack project. 
+
+From there, you can decide for yourself whether our not it makes sense for you and your existing workflow. Be curious and ask questions if you have them. You can find me on [Twitter](https://twitter.com/ivorsco77). Reach out.
+
+Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout the `starter` branch.
+
+```
+git clone https://github.com/ivorscott/go-delve-reload
+cd go-delve-reload
+git checkout starter
+```
+
+## Docker 101
+
+Docker is useful for operators, system admins, build engineers and developers. 
+
+Docker allows you to package your app and host it on any operating system. This means no more, "It works on my machine" dialogue. 
+
+Docker supports the full software lifecycle from development to production. With Docker, software delivery doesn't have to be a painful and unpredictable process.
+
+![use-docker](/media/screen-shot-2020-01-05-at-13.38.25.png "It works on my machine (Slap) --Use Docker!")
+
+## Docker Basics
+
+3 concepts to know if you're new to Docker.
+
+### 1. Images
+
+A Docker image is your application's binaries, dependencies, and meta data included in a single entity, made up of multiple static layers that are cached for reuse. 
+
+### 2. Dockerfile
+
+A Dockerfile is a recipe for making images. Each instruction forms its own image layer. 
+
+### 3. Containers
+
+A Docker container is an app instance derived from a particular Docker Image. 
+
+We will focus on :
 
 * VSCode Setup
 * Multi-stage Builds
@@ -30,15 +76,7 @@ We will focus on:
 * [VSCode](https://code.visualstudio.com/)
 * [Docker](https://www.docker.com/products/docker-desktop)
 
-Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout the `starter` branch.
-
-```
-git clone https://github.com/ivorscott/go-delve-reload
-cd go-delve-reload
-git checkout starter
-```
-
-# Setting up VSCode
+# Setting Up VSCode
 
 Open VSCode or [install it](https://code.visualstudio.com/download).
 
@@ -49,9 +87,9 @@ Install these two extensions:
 2. [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
    Adds syntax highlighting, commands, hover tips, and linting for docker related files.
 
-## Mono Repos and Go Modules
+## Go Modules in Mono Repos
 
-Our mono repo has two folders, one for the client; one for the api. When using Go modules, VSCode seems to complain when our api is not the project root. Right click below the project tree in the sidebar region to fix this. 
+Our repo has two folders, one for the client side; the other for the api. When using Go modules, VSCode seems to complain when our api is not the project root. Right click below the project tree in the sidebar region to fix this. 
 
 Click on "Add Folder To Workspace" and select the `api` folder.
 
@@ -170,15 +208,15 @@ In the root directory run the following:
 docker build --target dev --tag demo/api ./api
 ```
 
-The `docker build` command builds the a new docker image referencing the Dockerfile inside the api folder. 
+The `docker build` command builds a new docker image referencing our Dockerfile.
 
 The flag `--target` specifies that we only want to target the `dev` stage in the multi-stage setup.
 
-[Multi-stage](https://docs.docker.com/develop/develop-images/multistage-build/) builds help us apply separation of concerns. A multi-stage setup allows you to define different stages of a single Dockerfile and reference them later. In our api Dockerfile, we declared the name of our first stage `as base`.
+[Multi-stage](https://docs.docker.com/develop/develop-images/multistage-build/) builds help us apply separation of concerns. In a multi-stage setup, you to define different stages of a single Dockerfile. Then you reference specific stages later. In our api Dockerfile, we declared the name of our first stage `as base`.
 
 `--tag` specifies an [image tag](https://docs.docker.com/engine/reference/commandline/tag/). An image tag is just a name we can use to reference new image, it is tagged `demo/api`.
 
-If you publish a private or public image to [DockerHub](https://hub.docker.com/) (the official Docker image repository) the format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username.
+If your goal is to publish to [DockerHub](https://hub.docker.com/) you can make a private or public image. The format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username. 
 
 ### Creating the React Dockerfile
 
