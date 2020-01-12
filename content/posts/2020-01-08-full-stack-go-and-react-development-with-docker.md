@@ -1,6 +1,6 @@
 ---
 template: post
-title: Fullstack Go and React Development Setup with Docker
+title: Go and React Development Setup with Docker
 slug: go-react-development-setup-with-docker
 draft: true
 date: 2020-01-08T12:54:37.547Z
@@ -11,21 +11,28 @@ tags:
 ---
 # Introduction
 
-In this tutorial we will setup a Go and React development environment with Docker. 
+I've been migrating from Node to Golang. With Node I had a great development workflow, but struggled to achieve a similar one in Go. What I wanted was the ability to live reload a Go API on code changes. Debug it with breakpoints. Then wrap it in a container workflow.
 
-I won't teach you every painstaking detail about creating a react app or even a go api. I expect you to be familiar with fullstack development already. It's quite fine if you're new to Docker though. I'll explain concepts when needed. So relax, you'll be able to copy and paste code as you go.
+In this tutorial we will setup a Go and React development environment with Docker. I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a react app or even a Go API. However, it's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
 
-The example project I introduce is far from complete. The project starter is a simple mono repo containing two folders. 
+We focus on :
 
-```
-├── README.md
-├── api
-├── client
-```
+* VSCode Setup
+* Multi-stage Dockerfiles
+* Docker Compose
+* Live Reloading a Go API
+* Delve Debugging a Go API
+* Self-Signed Certificates with Traefik
+* Testing
 
-Step by step, I'll take you through a typical docker workflow.  At the end of this tutorial you'll be ready to Dockerize your own fullstack project. 
+# Getting started
 
-From there, you can decide for yourself whether our not it makes sense for you and your existing workflow. Be curious and ask questions if you have them. You can find me on [Twitter](https://twitter.com/ivorsco77). Reach out.
+The example project I introduce is far from complete. 
+
+## Requirements
+
+* [VSCode](https://code.visualstudio.com/)
+* [Docker](https://www.docker.com/products/docker-desktop)
 
 Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout the `starter` branch.
 
@@ -35,7 +42,15 @@ cd go-delve-reload
 git checkout starter
 ```
 
-## Docker 101
+The project starter is a simple mono repo containing two folders. 
+
+```
+├── README.md
+├── api
+├── client
+```
+
+# Docker Basics
 
 Docker is useful for operators, system admins, build engineers and developers. 
 
@@ -45,36 +60,23 @@ Docker supports the full software lifecycle from development to production. With
 
 ![use-docker](/media/screen-shot-2020-01-05-at-13.38.25.png "It works on my machine (Slap) --Use Docker!")
 
-## Docker Basics
+## 3 Essentail Concepts
 
-3 concepts to know if you're new to Docker.
+Using Docker often starts with creating a Dockerfile, then building an image, and finally running one or more containers. 
 
-### 1. Images
+Here's some terminology you should know.
+
+**1. Images**
 
 A Docker image is your application's binaries, dependencies, and meta data included in a single entity, made up of multiple static layers that are cached for reuse. 
 
-### 2. Dockerfile
+**2. Dockerfiles**
 
-A Dockerfile is a recipe for making images. Each instruction forms its own image layer. 
+A Dockerfile is a recipe of instructions for making images. Each instruction forms its own image layer. 
 
-### 3. Containers
+**3. Containers**
 
-A Docker container is an app instance derived from a particular Docker Image. 
-
-We will focus on :
-
-* VSCode Setup
-* Multi-stage Builds
-* Docker Compose
-* Live Reloading a Go API
-* Delve Debugging a Go API
-* Self-Signed Certificates with Traefik
-* Tests
-
-## Requirements
-
-* [VSCode](https://code.visualstudio.com/)
-* [Docker](https://www.docker.com/products/docker-desktop)
+A Docker container is an app instance derived from a particular Docker Image. A container is not a virtual machine. They differ because each container doesn't require its own operating system. Containers on a single host will actually share a single operating system. This makes them lightweight, since they require less system resources and allows us to run many applications or containers on one machine.
 
 # Setting Up VSCode
 
@@ -87,9 +89,9 @@ Install these two extensions:
 2. [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
    Adds syntax highlighting, commands, hover tips, and linting for docker related files.
 
-## Go Modules in Mono Repos
+## Go Modules
 
-Our repo has two folders, one for the client side; the other for the api. When using Go modules, VSCode seems to complain when our api is not the project root. Right click below the project tree in the sidebar region to fix this. 
+When using Go modules in a mono repo, VSCode seems to complain when our api is not the project root. Right click below the project tree in the sidebar region to fix this. 
 
 Click on "Add Folder To Workspace" and select the `api` folder.
 
@@ -97,7 +99,7 @@ Click on "Add Folder To Workspace" and select the `api` folder.
 
 ![](/media/screen-shot-2020-01-10-at-03.08.24.png)
 
-## Setting VSCode for Debugging
+## Setting Up VSCode for Debugging
 
 VSCode will need to attach to the delve debugger inside the go container.
 
@@ -202,7 +204,7 @@ CMD ["./main"]
 
 ### Demo
 
-In the root directory run the following:
+In the root directory run the following to build the api development image:
 
 ```
 docker build --target dev --tag demo/api ./api
@@ -210,7 +212,7 @@ docker build --target dev --tag demo/api ./api
 
 The `docker build` command builds a new docker image referencing our Dockerfile.
 
-The flag `--target` specifies that we only want to target the `dev` stage in the multi-stage setup.
+`--target` specifies that we only want to target the `dev` stage in the multi-stage setup.
 
 [Multi-stage](https://docs.docker.com/develop/develop-images/multistage-build/) builds help us apply separation of concerns. In a multi-stage setup, you to define different stages of a single Dockerfile. Then you reference specific stages later. In our api Dockerfile, we declared the name of our first stage `as base`.
 
@@ -301,9 +303,27 @@ COPY --from=build-stage /client/app/build /usr/share/nginx/html
 COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 ```
 
+### Demo
+
+In the root directory run the following to build the client development image:
+
+```
+docker build --target dev --tag demo/client ./client
+```
+
 # Running Containers
 
-`docker-compose` is a command line tool and configuration file. It was never designed for production. You should use it for local development and test automation. For production, you are better off using a production grade orchestrator like Docker Swarm -- [here's why](https://github.com/BretFisher/ama/issues/8).
+With are Docker images building successfully we are ready to run our application instances.
+
+`docker-compose` is a command line tool and configuration file for running containers. It was never designed for production. You should only use it for local development and test automation. For production, you are better off using a production grade orchestrator like Docker Swarm -- [here's why](https://github.com/BretFisher/ama/issues/8).
+
+> **Note:**
+>
+> \
+>
+> [Kubernetes](https://kubernetes.io/)
+>
+>  is another popular production grade orchestrator. In development, I normally don't use an orchestrator. In future posts I will touch on both Docker Swarm and Kubernetes in production.
 
 With `docker-compose` we can run a collection of containers with one command. It makes running multiple containers far easier especially when containers have relationships and depend on one another.
 
@@ -493,10 +513,10 @@ Navigate to your host machine's  `/etc/hosts` file and open it.
 sudo vim /etc/hosts
 ```
 
-Add the following domains.
+Add an additional line containing the following domains.
 
 ```
-127.0.0.1       client.local api.local debug.api.local traefik.api.local pgadmin.local
+127.0.0.1       client.local api.local debug.api.local traefik.api.local pgadmin.local 
 ```
 
 ### Demo
@@ -515,29 +535,224 @@ In two separate browser tabs, navigate to <https://api.local/products> first and
 
 You should see the products being shown in the react app, meaning the `traefik`, `api`, `client`, and `db` containers are communicating successfully.
 
-```
-docker-compose down --volumes
-```
-
 You might have noticed that when `docker-compose up` created our volume and networks their names were prefixed with the `go-delve-reload` project directory name:
 
 ![](/media/screen-shot-2020-01-09-at-14.01.13.png)
 
 ![](/media/screen-shot-2020-01-09-at-14.01.46.png)
 
-In the next section, we'll use a makefile to create our postgres volume and required networks. Update the `docker-compose.yml` file to tell docker-compose that we expect the postgres volume and required networks to be created externally. Add the following.
+### Clean up
+
+Run the following to stop and remove all the containers we create with the docker-compose up command. `--volumes` will also remove any volumes that were created.
 
 ```
-volumes:
-  postgres:
-    external: true
-
-networks:
-  postgres:
-    external: true
-  traefik-public:
-    external: true
+docker-compose down --volumes
 ```
+
+# Self-signed certificates with Traefik
+
+Our compose file was already configured to generate self-signed certificates with Traefik. 
+
+You might be wondering what [Traefik](https://containo.us/traefik/) is in the first place.
+
+Traefik's documentation states: 
+
+> Traefik is an open-source Edge Router that makes publishing your services a fun and easy experience. It receives requests on behalf of your system and finds out which components are responsible for handling them.
+>
+> What sets Traefik apart, besides its many features, is that it automatically discovers the right configuration for your services. The magic happens when Traefik inspects your infrastructure, where it finds relevant information and discovers which service serves which request.
+>
+> \-- https://docs.traefik.io/#the-traefik-quickstart-using-docker
+
+Revisit the traefik service in our compose file.
+
+```
+ traefik:
+    image: traefik:v2.1.1
+    command:
+      - "--api.insecure=true" # Not For Production
+      - "--api.debug=true"
+      - "--log.level=DEBUG"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=traefik-public"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.tls=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.api.local`)"
+      - "traefik.http.routers.traefik.service=api@internal"
+      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+      - "traefik.http.routers.http-catchall.entrypoints=web"
+      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+```
+
+We leverage the official traefik image from DockerHub, version 2.1.1. We can configure Traefik using command line flags. 
+
+> **Note:**
+>
+> There are 3 ways to configure Traefik. You can use TOML files, YAML files or CLI flags.
+>
+> I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one compose file to set everything up. 
+
+![](/media/screen-shot-2020-01-12-at-17.25.23.png)
+
+## Line by line: How it works
+
+Let's start with the command line flags.
+
+```
+--api.insecure=true
+```
+
+The API is exposed on the traefik entry point (port 8080).
+
+```
+--api.debug=true
+```
+
+Enable additional endpoints for debugging and profiling.
+
+```
+--log.level=DEBUG
+```
+
+By default, the log level is set to ERROR. Alternative logging levels are DEBUG, PANIC, FATAL, WARN, and INFO.
+
+```
+--providers.docker
+```
+
+There are various providers to chose from, this line explicitly selects docker.
+
+```
+--providers.docker.exposedbydefault=false
+```
+
+Restrict Traefik's routing configuration from exposing all containers by default. Only containers with `traefik.enable=true` label will be exposed.
+
+```
+--providers.docker.network=traefik-public
+```
+
+Defines a default network to use for connections to all containers.
+
+```
+--entrypoints.web.address=:80
+```
+
+Create an entrypoint named web on port 80 to handle http connections.
+
+```
+--entrypoints.websecure.address=:443
+```
+
+Create an entrypoint named websecure on port 443 to handle https connections.
+
+
+
+Next we will cover the labels on the traefik service.
+
+```
+- "traefik.enable=true"
+```
+
+Tell Traefik to include the service in its routing configuration.
+
+```
+- "traefik.http.routers.traefik.tls=true"
+```
+
+Enable TLS Certficates
+
+```
+- "traefik.http.routers.traefik.rule=Host(`traefik.api.local`)"
+```
+
+Set a host matching rule to redirect all traffic matching this request to the container.
+
+```
+- "traefik.http.routers.traefik.service=api@internal"
+```
+
+If you enable the API, a new special service named api@internal is created and can be referenced in a router. This label attaches to Traefik's internal api so we can access the dashboard.
+
+![](/media/screen-shot-2020-01-12-at-20.26.12.png)
+
+```
+- "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+- "traefik.http.routers.http-catchall.entrypoints=web"
+- "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+- "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+```
+
+This code block creates a router named http-catchall that will catch all HTTP requests and will forward it to a router called redirect-to-https@docker. This has the added benefit of redirecting our traffic to https.
+
+Revisit the client service.
+
+```
+  client:
+    build:
+      context: ./client
+      target: dev
+    ports:
+      - 3000:3000
+    volumes:
+      - ./client:/client/app
+      - /client/app/node_modules
+    networks:
+      - traefik-public
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.client.tls=true"
+      - "traefik.http.routers.client.rule=Host(`client.local`)"
+      - "traefik.http.routers.client.entrypoints=websecure"
+      - "traefik.http.services.client.loadbalancer.server.port=3000"
+```
+
+## Line by line: How it works
+
+```
+traefik.enable=true 
+```
+
+Tell Traefik to include the service in its routing configuration.
+
+```
+traefik.http.routers.client.tls=true
+```
+
+To update the Router configuration automatically attached to the application, add labels starting with `traefik.http.routers.{router-name-of-your-choice}` followed by the option you want to change.  In this case, we enable tls encryption.
+
+```
+traefik.http.routers.client.rule=Host(`client.local`)
+```
+
+Set a host matching rule to redirect all traffic matching this request to the container.
+
+```
+traefik.http.routers.client.entrypoints=websecure
+```
+
+Configure Traefik to expose the container on the websecure entrypoint.
+
+```
+traefik.http.services.client.loadbalancer.server.port=3000
+```
+
+Tell Traefik that the container will be exposed on port 3000 internally.
+
+Before I knew about Traefik, I was configuring a nginx reverse proxy from scratch. Each time I added an additional service I had to update my nginx config. Not only is this not scalable it became easy to make a mistake. With Traefik, reverse proxying container services is easy. 
 
 # Makefiles
 
@@ -675,6 +890,19 @@ dump:
 .PHONY: dump
 ```
 
+When we used `docker-compose up` in earlier, we instructed docker-compose to create our networks and volumes if they didn't exist. You can also create these things externally, or beforehand. Now our makefile will be creating our volumes and networks. Before continuing, update the bottom of your `docker-compose.yml` file to use an external volume and external networks.
+
+```
+volumes:
+  postgres:        external: true
+
+networks:
+  postgres:
+    external: true
+  traefik-public:
+    external: true 
+```
+
 ### Demo
 
 ```
@@ -684,6 +912,16 @@ make
 When you execute a target, each command in the target's command body will be printed to stdout in a self documenting way and then executed. If you don't want a command printed to stdout but you want it executed, you can add the "@" symbol before it. Makefile comments are preceded by a "#" symbol. Using "@#" before a command will hide it from stdout and never execute.
 
 I added documentation to every target using `echo` to describe what each one does. 
+
+Since we are creating 2 networks and a volumes through the makefile. We need a way to test if we have done so already.
+
+```
+ifeq (,$(findstring postgres-net,$(NETWORKS)))
+	# do something
+endif
+```
+
+The conditional statement seems a bit strange because the first argument in the condition is empty, perhaps it can be better understood as `(ifeq (null,$(findstring postgres-net,$(NETWORKS)))` but this isn't the proper syntax.
 
 ## Variables
 
@@ -743,6 +981,8 @@ select name, price from products
 The `debug-db` target uses an advanced command line interface for Postgres called [pgcli](https://www.pgcli.com/).
 
 This is great we now have a user friendly terminal experience with syntax highlighting and auto completion. 
+
+![](/media/screen-shot-2020-01-12-at-21.43.06.png)
 
 ## PGAdmin4: Debugging Postgres In The Browser
 
@@ -830,6 +1070,10 @@ make debub-api
 
 Go to `/api/internal/handlers.go` and place a break point in one of the handlers. Within VSCode, Click "Launch Remote" button in the debugger tab. Next navigate to the route that triggers the handler. You should see the editor pause where you placed the break point. 
 
+![](/media/screen-shot-2020-01-12-at-21.24.33.png)
+
+![](/media/screen-shot-2020-01-12-at-21.30.16.png)
+
 # Test
 
 ### Demo
@@ -839,10 +1083,14 @@ make test-client
 make test-api
 ```
 
+![](/media/screen-shot-2020-01-12-at-21.27.09.png)
+
+![](/media/screen-shot-2020-01-12-at-21.30.16.png)
+
 ```
 docker build --target test --tag demo/client:test ./client
 ```
 
 # Conclusion
 
-I hope you learned a bunch about what is possible with Docker. Happy Coding.
+I hope you learned a bunch about how you can build a Go and React development setup with Docker. No matter what language you use on the frontend or backend the basic principles still apply. Enjoy improving your own developer workflow. Happy Coding.
