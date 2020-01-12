@@ -2,7 +2,7 @@
 template: post
 title: Go and React Development Setup with Docker
 slug: go-react-development-setup-with-docker
-draft: true
+draft: false
 date: 2020-01-08T12:54:37.547Z
 description: Build a Go and React development setup with Docker.
 category: development
@@ -13,7 +13,7 @@ tags:
 
 I've been migrating from Node to Golang. With Node I had a great development workflow, but struggled to achieve a similar one in Go. What I wanted was the ability to live reload a Go API on code changes. Debug it with breakpoints. Then wrap it in a container workflow.
 
-In this tutorial we will setup a Go and React development environment with Docker. I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a react app or even a Go API. However, it's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
+In this tutorial we will setup a Go and React development environment with Docker. I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a react app or even a Go API. It's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
 
 We focus on :
 
@@ -26,8 +26,6 @@ We focus on :
 * Testing
 
 # Getting started
-
-The example project I introduce is far from complete. 
 
 ## Requirements
 
@@ -95,7 +93,7 @@ When using Go modules in a mono repo, VSCode seems to complain when our api is n
 
 Click on "Add Folder To Workspace" and select the `api` folder.
 
-![](/media/screen-shot-2020-01-10-at-03.02.17.png)
+![](/media/screen-shot-2020-01-12-at-21.53.08.png)
 
 ![](/media/screen-shot-2020-01-10-at-03.08.24.png)
 
@@ -135,7 +133,13 @@ Add the following contents to `launch.json`.
 
 ### Creating the Golang Dockerfile
 
-Our api folder needs a `Dockerfile`. Create one and open it in your editor. Add the following:
+Add a new `Dockerfile` to the api folder and open it.
+
+```
+touch api/Dockerfile
+```
+
+ Add the following:
 
 ```
 # 1. FROM sets the baseImage to use for subsequent instructions.
@@ -212,17 +216,23 @@ docker build --target dev --tag demo/api ./api
 
 The `docker build` command builds a new docker image referencing our Dockerfile.
 
-`--target` specifies that we only want to target the `dev` stage in the multi-stage setup.
+`--target` specifies that we only want to target the `dev` stage in the multi-stage build setup.
 
-[Multi-stage](https://docs.docker.com/develop/develop-images/multistage-build/) builds help us apply separation of concerns. In a multi-stage setup, you to define different stages of a single Dockerfile. Then you reference specific stages later. In our api Dockerfile, we declared the name of our first stage `as base`.
+[Multi-stage builds](https://docs.docker.com/develop/develop-images/multistage-build/) help us apply separation of concerns. In a multi-stage build setup, you define different stages of a single Dockerfile. Then you reference specific stages later. In our api Dockerfile, we declared the name of our first stage `as base`.
 
-`--tag` specifies an [image tag](https://docs.docker.com/engine/reference/commandline/tag/). An image tag is just a name we can use to reference new image, it is tagged `demo/api`.
+`--tag` specifies an [image tag](https://docs.docker.com/engine/reference/commandline/tag/). An image tag is just a name we can use to reference the image, it is tagged `demo/api`.
 
-If your goal is to publish to [DockerHub](https://hub.docker.com/) you can make a private or public image. The format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username. 
+If your goal is to publish to [DockerHub](https://hub.docker.com/) you can make a private or public image. The basic format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username. 
 
 ### Creating the React Dockerfile
 
-Add a new `Dockerfile` for the client folder. Open it in your editor. Add the following contents:
+Add a new `Dockerfile` to the client folder and open it. 
+
+```
+touch client/Dockerfile
+```
+
+Add the following contents:
 
 ```
 # 1. Use the Node image as the base stage of a multi-stage routine
@@ -311,19 +321,17 @@ In the root directory run the following to build the client development image:
 docker build --target dev --tag demo/client ./client
 ```
 
+In this section, we saw how we use Dockerfiles to package up our application binaries with dependencies. We also used the `docker build` command to manually build our docker images. In the next section we will use `docker-compose` to build our images and run containers.
+
 # Running Containers
 
-With are Docker images building successfully we are ready to run our application instances.
+With our Docker images building successfully we are ready to run our application instances.
 
 `docker-compose` is a command line tool and configuration file for running containers. It was never designed for production. You should only use it for local development and test automation. For production, you are better off using a production grade orchestrator like Docker Swarm -- [here's why](https://github.com/BretFisher/ama/issues/8).
 
 > **Note:**
 >
-> \
->
-> [Kubernetes](https://kubernetes.io/)
->
->  is another popular production grade orchestrator. In development, I normally don't use an orchestrator. In future posts I will touch on both Docker Swarm and Kubernetes in production.
+> [Kubernetes](https://kubernetes.io/) is another popular production grade orchestrator. In development, I normally don't use an orchestrator. In future posts I will touch on both Docker Swarm and Kubernetes in production.
 
 With `docker-compose` we can run a collection of containers with one command. It makes running multiple containers far easier especially when containers have relationships and depend on one another.
 
@@ -339,7 +347,8 @@ Add the following:
 version: "3.7"
 services:
   traefik:
-    image: traefik:v2.1.1
+    image: traefik:v2.1.2
+    container_name: traefik
     command:
       - "--api.insecure=true" # Not For Production
       - "--api.debug=true"
@@ -371,6 +380,7 @@ services:
     build:
       context: ./api
       target: dev
+    container_name: api
     secrets:
       - postgres_db
       - postgres_user
@@ -384,20 +394,21 @@ services:
     volumes:
       - ./api:/api
     networks:
-      - postgres
+      - postgres-net
       - traefik-public
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.tls=true"
       - "traefik.http.routers.api.rule=Host(`api.local`)"
       - "traefik.http.routers.api.entrypoints=websecure"
-      - "traefik.http.services.debug-api.loadbalancer.server.port=4000"
+      - "traefik.http.services.api.loadbalancer.server.port=4000"
     command: CompileDaemon --build="go build -o main ./cmd/api" --command=./main
 
   client:
     build:
       context: ./client
       target: dev
+    container_name: client
     ports:
       - 3000:3000
     volumes:
@@ -416,6 +427,7 @@ services:
     build:
       context: ./api
       target: dev
+    container_name: debug-api
     secrets:
       - postgres_db
       - postgres_user
@@ -426,10 +438,12 @@ services:
       POSTGRES_DB: /run/secrets/postgres_db
       POSTGRES_USER: /run/secrets/postgres_user
       POSTGRES_PASSWORD: /run/secrets/postgres_passwd
+    volumes:
+      - ./api:/api
     ports:
       - 2345:2345
     networks:
-      - postgres
+      - postgres-net
       - traefik-public
     labels:
       - "traefik.enable=true"
@@ -457,20 +471,21 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - postgres:/var/lib/postgresql/data
+      - postgres-db:/var/lib/postgresql/data
       - ./api/scripts/:/docker-entrypoint-initdb.d/
     networks:
-      - postgres
+      - postgres-net
 
   pgadmin:
     image: dpage/pgadmin4
+    container_name: pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: test@example.com
       PGADMIN_DEFAULT_PASSWORD: "SuperSecret"
     depends_on:
       - db
     networks:
-      - postgres
+      - postgres-net
       - traefik-public
     labels:
       - "traefik.enable=true"
@@ -481,11 +496,14 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres:
+  postgres-db:
+    external: true
 
 networks:
-  postgres:
+  postgres-net:
+    external: true
   traefik-public:
+    external: true
 
 secrets:
   postgres_db:
@@ -496,7 +514,13 @@ secrets:
     file: ./secrets/postgres_user
 ```
 
-Create a `secrets` folder in the project root. Add the following secret files.
+Create a `secrets` folder in the project root.
+
+```
+mkdir secrets
+```
+
+ Add the following secret files.
 
 ```
 └── secrets
@@ -505,7 +529,36 @@ Create a `secrets` folder in the project root. Add the following secret files.
    └── postgres_user
 ```
 
+```
+touch secrets/postgres_db secrets/postgres_passwd secrets/postgres_user
+```
+
 In each file add some secret value.
+
+The following code in our `docker-compose.yml` file tells docker-compose that the volume, and networks will be created beforehand (or externally).
+
+```
+volumes:
+  postgres-db:
+    external: true
+
+networks:
+  postgres-net:
+    external: true
+  traefik-public:
+    external: true
+```
+
+So we need to create them upfront. Run the following commands to do so.
+
+```
+docker network create postgres-net
+docker network create traefik-public
+```
+
+```
+docker volume create postgres-db
+```
 
 Navigate to your host machine's  `/etc/hosts` file and open it. 
 
@@ -535,23 +588,24 @@ In two separate browser tabs, navigate to <https://api.local/products> first and
 
 You should see the products being shown in the react app, meaning the `traefik`, `api`, `client`, and `db` containers are communicating successfully.
 
-You might have noticed that when `docker-compose up` created our volume and networks their names were prefixed with the `go-delve-reload` project directory name:
+![](/media/screen-shot-2020-01-12-at-23.49.05.png)
 
-![](/media/screen-shot-2020-01-09-at-14.01.13.png)
+![](/media/screen-shot-2020-01-12-at-23.52.47.png)
 
-![](/media/screen-shot-2020-01-09-at-14.01.46.png)
+### Cleaning up
 
-### Clean up
-
-Run the following to stop and remove all the containers we create with the docker-compose up command. `--volumes` will also remove any volumes that were created.
+Run the following to stop and remove all the containers we create with the docker-compose up command. In addition to that also remove the external volume and networks we created. In the makefile section, our makefile will create these for us.
 
 ```
-docker-compose down --volumes
+docker-compose down
+docker network remove postgres-net
+docker network remove traefik-public
+docker volume remove postgres-db
 ```
 
-# Self-signed certificates with Traefik
+# Self-signed Certificates with Traefik
 
-Our compose file was already configured to generate self-signed certificates with Traefik. 
+Our `docker-compose.yml` file was already configured to generate self-signed certificates with Traefik. 
 
 You might be wondering what [Traefik](https://containo.us/traefik/) is in the first place.
 
@@ -567,7 +621,7 @@ Revisit the traefik service in our compose file.
 
 ```
  traefik:
-    image: traefik:v2.1.1
+    image: traefik:v2.1.2
     command:
       - "--api.insecure=true" # Not For Production
       - "--api.debug=true"
@@ -597,17 +651,17 @@ Revisit the traefik service in our compose file.
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 ```
 
-We leverage the official traefik image from DockerHub, version 2.1.1. We can configure Traefik using command line flags. 
+We leverage the official traefik image from DockerHub, version 2.1.2. We can configure Traefik using command line flags. 
 
 > **Note:**
 >
 > There are 3 ways to configure Traefik. You can use TOML files, YAML files or CLI flags.
 >
-> I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one compose file to set everything up. 
+> I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one `docker-compose.yml` file to set everything up. 
 
 ![](/media/screen-shot-2020-01-12-at-17.25.23.png)
 
-## Line by line: How it works
+## Line by Line: How It Works
 
 Let's start with the command line flags.
 
@@ -659,8 +713,6 @@ Create an entrypoint named web on port 80 to handle http connections.
 
 Create an entrypoint named websecure on port 443 to handle https connections.
 
-
-
 Next we will cover the labels on the traefik service.
 
 ```
@@ -689,14 +741,14 @@ If you enable the API, a new special service named api@internal is created and c
 
 ![](/media/screen-shot-2020-01-12-at-20.26.12.png)
 
+The next group of labels creates a router named http-catchall that will catch all HTTP requests and forwards it to a router called redirect-to-https. This has the added benefit of redirecting our traffic to https.
+
 ```
 - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
 - "traefik.http.routers.http-catchall.entrypoints=web"
 - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
 - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 ```
-
-This code block creates a router named http-catchall that will catch all HTTP requests and will forward it to a router called redirect-to-https@docker. This has the added benefit of redirecting our traffic to https.
 
 Revisit the client service.
 
@@ -720,39 +772,39 @@ Revisit the client service.
       - "traefik.http.services.client.loadbalancer.server.port=3000"
 ```
 
-## Line by line: How it works
+## Line by Line: How It Works
 
 ```
-traefik.enable=true 
+- "traefik.enable=true" 
 ```
 
 Tell Traefik to include the service in its routing configuration.
 
 ```
-traefik.http.routers.client.tls=true
+- "traefik.http.routers.client.tls=true"
 ```
 
 To update the Router configuration automatically attached to the application, add labels starting with `traefik.http.routers.{router-name-of-your-choice}` followed by the option you want to change.  In this case, we enable tls encryption.
 
 ```
-traefik.http.routers.client.rule=Host(`client.local`)
+- "traefik.http.routers.client.rule=Host(`client.local`)"
 ```
 
 Set a host matching rule to redirect all traffic matching this request to the container.
 
 ```
-traefik.http.routers.client.entrypoints=websecure
+- "traefik.http.routers.client.entrypoints=websecure"
 ```
 
 Configure Traefik to expose the container on the websecure entrypoint.
 
 ```
-traefik.http.services.client.loadbalancer.server.port=3000
+- "traefik.http.services.client.loadbalancer.server.port=3000"
 ```
 
 Tell Traefik that the container will be exposed on port 3000 internally.
 
-Before I knew about Traefik, I was configuring a nginx reverse proxy from scratch. Each time I added an additional service I had to update my nginx config. Not only is this not scalable it became easy to make a mistake. With Traefik, reverse proxying container services is easy. 
+Before Traefik, I was configuring a nginx reverse proxy from scratch. Each time I added an additional service I had to update my nginx config. Not only is this not scalable it became easy to make a mistake. With Traefik, reverse proxying container services is easy. 
 
 # Makefiles
 
@@ -786,7 +838,7 @@ target: prerequisite prerequisite prerequisite ...
 
 In the command line, we would run this example makefile by typing `make` or `make hello`. Both would work because when a target is not specified the first target in the makefile is executed. 
 
-## Creating The Makefile
+## Creating the Makefile
 
 Create a `makefile` in your project root and open it. 
 
@@ -822,16 +874,16 @@ ifeq (,$(findstring traefik-public,$(NETWORKS)))
 endif
 
 postgres-network:
-ifeq (,$(findstring postgres,$(NETWORKS)))
+ifeq (,$(findstring postgres-net,$(NETWORKS)))
 	@echo [ creating postgres network... ]
-	docker network create postgres
+	docker network create postgres-net
 	@echo $(SUCCESS)
 endif
 
 postgres-volume:
-ifeq (,$(findstring postgres,$(VOLUMES)))
+ifeq (,$(findstring postgres-db,$(VOLUMES)))
 	@echo [ creating postgres volume... ]
-	docker volume create postgres
+	docker volume create postgres-db
 	@echo $(SUCCESS)
 endif
 
@@ -868,7 +920,7 @@ debug-api:
 debug-db:
 	@# advanced command line interface for postgres
 	@# includes auto-completion and syntax highlighting. https://www.pgcli.com/
-	@docker run -it --rm --net postgres dencold/pgcli postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/$(POSTGRES_DB)
+	@docker run -it --rm --net postgres-net dencold/pgcli postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@db:5432/$(POSTGRES_DB)
 
 dump:
 	@echo [ dumping postgres backup for $(POSTGRES_DB)... ]
@@ -890,19 +942,6 @@ dump:
 .PHONY: dump
 ```
 
-When we used `docker-compose up` in earlier, we instructed docker-compose to create our networks and volumes if they didn't exist. You can also create these things externally, or beforehand. Now our makefile will be creating our volumes and networks. Before continuing, update the bottom of your `docker-compose.yml` file to use an external volume and external networks.
-
-```
-volumes:
-  postgres:        external: true
-
-networks:
-  postgres:
-    external: true
-  traefik-public:
-    external: true 
-```
-
 ### Demo
 
 ```
@@ -913,7 +952,7 @@ When you execute a target, each command in the target's command body will be pri
 
 I added documentation to every target using `echo` to describe what each one does. 
 
-Since we are creating 2 networks and a volumes through the makefile. We need a way to test if we have done so already.
+Our makefile now creates our external database volume and networks. We needed a way to test if we have done this already. 
 
 ```
 ifeq (,$(findstring postgres-net,$(NETWORKS)))
@@ -921,7 +960,7 @@ ifeq (,$(findstring postgres-net,$(NETWORKS)))
 endif
 ```
 
-The conditional statement seems a bit strange because the first argument in the condition is empty, perhaps it can be better understood as `(ifeq (null,$(findstring postgres-net,$(NETWORKS)))` but this isn't the proper syntax.
+If we find the `postgres-net` network in `$(NETWORKS)` we do nothing, otherwise we create the network. The conditional statement seems a bit strange because the first argument in the condition is empty, perhaps it can be better understood as `ifeq (null,$(findstring postgres-net,$(NETWORKS)))` but actually the code above is the proper syntax.
 
 ## Variables
 
@@ -956,7 +995,7 @@ A makefile can't distinguish between a file target and a phony target.
 
  Each of our commands are `.PHONY:` targets because they don't represent files.
 
-## Debugging Postgres In The Terminal
+## Debugging Postgres in the Terminal
 
 We still haven't discussed how to interact with it Postgres. Eventually you're going to want to enter the running Postgres container to make queries or debug.
 
@@ -984,7 +1023,7 @@ This is great we now have a user friendly terminal experience with syntax highli
 
 ![](/media/screen-shot-2020-01-12-at-21.43.06.png)
 
-## PGAdmin4: Debugging Postgres In The Browser
+## PGAdmin4: Debugging Postgres in the Browser
 
 Not everyone likes the terminal experience when working with Postgres. We also have a browser option using [pgAdmin4](https://www.pgadmin.org/download/pgadmin-4-container/). 
 
@@ -1060,7 +1099,7 @@ In our docker-compose file, `create-db.sh` is bind mounted into the db container
 
 The script only runs if a backup doesn't exist. That way, when you make a dump of the backup, (which is automatically placed in the `api/scripts` directory), if we were to remove the database volume and start over, the next time around, `create-db.sh` will not run and only the backup would be used.
 
-# Debugging A Go API
+# Debugging a Go API
 
 ### Demo
 
@@ -1074,7 +1113,7 @@ Go to `/api/internal/handlers.go` and place a break point in one of the handlers
 
 ![](/media/screen-shot-2020-01-12-at-21.30.16.png)
 
-# Test
+# Testing
 
 ### Demo
 
