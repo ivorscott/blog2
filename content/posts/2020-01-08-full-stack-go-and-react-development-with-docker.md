@@ -1,17 +1,21 @@
 ---
 template: post
-title: Go and React Development Setup with Docker
-slug: go-react-development-setup-with-docker
+title: The Ultimate Go and React Development Setup with Docker
+slug: ultimate-go-react-development-setup-with-docker
 draft: false
 date: 2020-01-08T12:54:37.547Z
-description: Build a Go and React development setup with Docker.
+description: >-
+  I've been migrating from Node to Golang. With Node I had a great development
+  workflow, but struggled to achieve a similar one in Go. What I wanted was the
+  ability to live reload a Go API on code changes. Debug it with breakpoints.
+  Then wrap it in a container workflow for a fullstack project.
 category: development
 tags:
   - Delve Docker Golang Makefile Postgres Traefik VSCode
 ---
 # Introduction
 
-I've been migrating from Node to Golang. With Node I had a great development workflow, but struggled to achieve a similar one in Go. What I wanted was the ability to live reload a Go API on code changes. Debug it with breakpoints. Then wrap it in a container workflow.
+I've been migrating from Node to Golang. With Node I had a great development workflow, but struggled to achieve a similar one in Go. What I wanted was the ability to live reload a Go API on code changes. Debug it with breakpoints. Then wrap it in a container workflow for a fullstack project.
 
 In this tutorial we will setup a Go and React development environment with Docker. I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a react app or even a Go API. It's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
 
@@ -89,9 +93,11 @@ Install these two extensions:
 
 ## Go Modules
 
-When using Go modules in a mono repo, VSCode seems to complain when our api is not the project root. Right click below the project tree in the sidebar region to fix this. 
+When using Go modules in a mono repo, VSCode seems to complain when our api is not the project root.
 
-Click on "Add Folder To Workspace" and select the `api` folder.
+![](/media/screen-shot-2020-01-10-at-03.00.07.png)
+
+Right click below the project tree in the sidebar region to fix this. Click on "Add Folder To Workspace" and select the `api` folder.
 
 ![](/media/screen-shot-2020-01-12-at-21.53.08.png)
 
@@ -329,9 +335,7 @@ With our Docker images building successfully we are ready to run our application
 
 `docker-compose` is a command line tool and configuration file for running containers. It was never designed for production. You should only use it for local development and test automation. For production, you are better off using a production grade orchestrator like Docker Swarm -- [here's why](https://github.com/BretFisher/ama/issues/8).
 
-> **Note:**
->
-> [Kubernetes](https://kubernetes.io/) is another popular production grade orchestrator. In development, I normally don't use an orchestrator. In future posts I will touch on both Docker Swarm and Kubernetes in production.
+_**\*\*Note\*\*:** _[_Kubernetes_](https://kubernetes.io/) _is another popular production grade orchestrator. In development, I normally don't use an orchestrator. In future posts I will touch on both Docker Swarm and Kubernetes in production._
 
 With `docker-compose` we can run a collection of containers with one command. It makes running multiple containers far easier especially when containers have relationships and depend on one another.
 
@@ -578,13 +582,11 @@ Add an additional line containing the following domains.
 docker-compose up
 ```
 
-In two separate browser tabs, navigate to <https://api.local/products> first and then <https://client.local>
+In two separate browser tabs, navigate to <https://api.local/products> and then <https://client.local>
 
-> **Note:**
->
-> In your browser, you may see warnings prompting you to click a link to continue to the requested page. This is quite common when using self-signed certificates and shouldn't be a reason of concern.
->
-> The reason we are using self-signed certificates in the first place is to replicate the production environment as much as possible.
+**\*\*Note\*\*:** In your browser, you may see warnings prompting you to click a link to continue to the requested page. This is quite common when using self-signed certificates and shouldn't be a reason of concern.
+
+The reason we are using self-signed certificates in the first place is to replicate the production environment as much as possible.
 
 You should see the products being shown in the react app, meaning the `traefik`, `api`, `client`, and `db` containers are communicating successfully.
 
@@ -653,11 +655,9 @@ Revisit the traefik service in our compose file.
 
 We leverage the official traefik image from DockerHub, version 2.1.2. We can configure Traefik using command line flags. 
 
-> **Note:**
->
-> There are 3 ways to configure Traefik. You can use TOML files, YAML files or CLI flags.
->
-> I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one `docker-compose.yml` file to set everything up. 
+**\*\*Note\*\*:**There are 3 ways to configure Traefik. You can use TOML files, YAML files or CLI flags.
+
+I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one `docker-compose.yml` file to set everything up. 
 
 ![](/media/screen-shot-2020-01-12-at-17.25.23.png)
 
@@ -832,9 +832,7 @@ target: prerequisite prerequisite prerequisite ...
 (TAB) commands 
 ```
 
-> **Note:**
->
->  targets and prerequisites don't have to be files. 
+**\*\*Note\*\*:** targets and prerequisites don't have to be files. 
 
 In the command line, we would run this example makefile by typing `make` or `make hello`. Both would work because when a target is not specified the first target in the makefile is executed. 
 
@@ -1031,11 +1029,17 @@ To login, the email is `test@example.com` and the password is `SuperSecret.` To 
 
 ### Demo
 
-Navigate to [https://pgadmin.local ](https://pgadmin.local)in your browser. Login.
+Navigate to [https://pgadmin.local ](https://pgadmin.local)in your browser and login.
+
+Click on "Add New Server".
 
 ![](/media/screen-shot-2020-01-09-at-20.58.30.png)
 
+The two tabs you need to modify are "General" and "Connection". Add the name of the database under General.
+
 ![](/media/screen-shot-2020-01-09-at-20.59.11.png)
+
+Under the "Connection" tab, fill in the host name which should be `db` unless you changed it in your `docker-compose.yml` file. Make your database the maintenance database. Then add your username and password and check save password.
 
 ![](/media/screen-shot-2020-01-09-at-21.00.08.png)
 
