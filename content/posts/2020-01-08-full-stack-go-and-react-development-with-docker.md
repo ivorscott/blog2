@@ -22,11 +22,14 @@ In this tutorial we will setup a Go and React development environment with Docke
 We focus on :
 
 * VSCode Setup
-* Multi-stage Dockerfiles
+* Docker Basics
+* Multi-stage Builds
 * Docker Compose
+* Using Makefiles
+* Using Postgres
+* Using Traefik
 * Live Reloading a Go API
 * Delve Debugging a Go API
-* Self-Signed Certificates with Traefik
 * Testing
 
 # Getting started
@@ -1102,6 +1105,22 @@ In our docker-compose file, `create-db.sh` is bind mounted into the db container
 ```
 
 The script only runs if a backup doesn't exist. That way, when you make a dump of the backup, (which is automatically placed in the `api/scripts` directory), if we were to remove the database volume and start over, the next time around, `create-db.sh` will not run and only the backup would be used.
+
+# Live Reloading a Go API
+
+Our go api is already reloadable thanks to this line in our `docker-compose.yml `file.
+
+```
+CompileDaemon --build="go build -o main ./cmd/api" --command=./main
+```
+
+`--build` is used to specify the command we want to run when rebuilding (this flag is required).
+
+`--command` is used to specify the command to run after a successful build (this flag defaults to nothing).
+
+### Demo
+
+To see this in action make sure your api is running. Then make a change to any api file to see it rebuild.
 
 # Debugging a Go API
 
