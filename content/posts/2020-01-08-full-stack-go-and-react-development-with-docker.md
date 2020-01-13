@@ -1150,7 +1150,7 @@ To see this in action make sure your api is running. Then make a change to any a
 
 # Delve Debugging a Go API
 
-[Delve](https://github.com/go-delve/delve) has become the de facto standard debugger for the Go programming language. To use it with VSCode, we needed to add a launch script so that VSCode could to attach to the debugger in the go container. With delve installed, the following line is how we actually execute it at the container level.
+[Delve](https://github.com/go-delve/delve) has become the de facto standard debugger for the Go programming language. To use it with VSCode, we needed to add a launch script so that VSCode could attach to the debugger in the go container. With delve installed, the following line is how we actually execute it at the container level.
 
 ```
 dlv debug --accept-multiclient --continue --headless --listen=:2345 --api-version=2 --log ./cmd/api/
