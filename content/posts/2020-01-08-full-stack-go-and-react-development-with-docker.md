@@ -13,33 +13,37 @@ description: >-
 category: development
 tags:
   - Delve Docker Golang Makefile Postgres Traefik VSCode
+socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 ---
+
+![matthew-sleeper-kn8atn5_zgq-unsplash.jpg](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
+
 # Introduction
 
-Lately, I've been migrating from Node to Golang. With Node I had a great development workflow, but struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and to debug it with breakpoints while in a container. In this tutorial we will setup the Ultimate Go and React development environment with Docker. 
+Lately, I've been migrating from Node to Golang. With Node I had a great development workflow, but struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and to debug it with breakpoints while in a container. In this tutorial we will setup the Ultimate Go and React development environment with Docker.
 
 I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a react app or even a Go API. It's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
 
 We focus on :
 
-* [Getting Started](#getting-started)
-* [Docker Basics](#docker-basics)
-* [Setting Up VSCode](#setting-up-vscode)
-* [Multi-stage Builds](#multi-stage-builds)
-* [Docker Compose](#docker-compose)
-* [Using Traefik](#using-traefik)
-* [Using Makefiles](#using-makefiles)
-* [Using Postgres](#using-postgres)
-* [Live Reloading a Go API](#live-reloading-a-go-api)
-* [Delve Debugging a Go API](#delve-debugging-a-go-api)
-* [Testing](#testing)
+- [Getting Started](#getting-started)
+- [Docker Basics](#docker-basics)
+- [Setting Up VSCode](#setting-up-vscode)
+- [Multi-stage Builds](#multi-stage-builds)
+- [Docker Compose](#docker-compose)
+- [Using Traefik](#using-traefik)
+- [Using Makefiles](#using-makefiles)
+- [Using Postgres](#using-postgres)
+- [Live Reloading a Go API](#live-reloading-a-go-api)
+- [Delve Debugging a Go API](#delve-debugging-a-go-api)
+- [Testing](#testing)
 
 # Getting started
 
 ## Requirements
 
-* [VSCode](https://code.visualstudio.com/)
-* [Docker](https://www.docker.com/products/docker-desktop)
+- [VSCode](https://code.visualstudio.com/)
+- [Docker](https://www.docker.com/products/docker-desktop)
 
 Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout the `starter` branch.
 
@@ -49,7 +53,7 @@ cd go-delve-reload
 git checkout starter
 ```
 
-The project starter is a simple mono repo containing two folders. 
+The project starter is a simple mono repo containing two folders.
 
 ```
 ├── README.md
@@ -59,25 +63,25 @@ The project starter is a simple mono repo containing two folders.
 
 # Docker Basics
 
-Docker is useful for operators, system admins, build engineers and developers. 
+Docker is useful for operators, system admins, build engineers and developers.
 
-Docker allows you to package your app and host it on any operating system. This means no more, "It works on my machine" dialogue. 
+Docker allows you to package your app and host it on any operating system. This means no more, "It works on my machine" dialogue.
 
 Docker supports the full software lifecycle from development to production. With Docker, software delivery doesn't have to be a painful and unpredictable process.
 
 ## 3 Essentail Concepts
 
-Using Docker often starts with creating a Dockerfile, then building an image, and finally running one or more containers. 
+Using Docker often starts with creating a Dockerfile, then building an image, and finally running one or more containers.
 
 Here's some terminology you should know.
 
 **1. Images**
 
-A Docker image is your application's binaries, dependencies, and meta data included in a single entity, made up of multiple static layers that are cached for reuse. 
+A Docker image is your application's binaries, dependencies, and meta data included in a single entity, made up of multiple static layers that are cached for reuse.
 
 **2. Dockerfiles**
 
-A Dockerfile is a recipe of instructions for making images. Each instruction forms its own image layer. 
+A Dockerfile is a recipe of instructions for making images. Each instruction forms its own image layer.
 
 **3. Containers**
 
@@ -91,7 +95,7 @@ Open VSCode or [install it](https://code.visualstudio.com/download).
 
 Install these two extensions.
 
-1. [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) 
+1. [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go)
    Adds rich language support for the Go language.
 2. [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
    Adds syntax highlighting, commands, hover tips, and linting for docker related files.
@@ -150,7 +154,7 @@ Add a new `Dockerfile` to the api folder and open it.
 touch api/Dockerfile
 ```
 
- Add the following:
+Add the following:
 
 ```
 # 1. FROM sets the baseImage to use for subsequent instructions.
@@ -196,7 +200,7 @@ EXPOSE 4000 2345
 FROM dev as test
 
 # 12. Copy the remaining api code into /api in the image's filesystem
-COPY . . 
+COPY . .
 
 # 13. Run unit tests
 RUN go test -v ./...
@@ -213,7 +217,7 @@ FROM scratch as prod
 # 17. Copy only the files we want from the build stage into the prod stage
 COPY --from=build-stage /api/main main
 
-# 18. CMD Provide defaults for an executing container. 
+# 18. CMD Provide defaults for an executing container.
 CMD ["./main"]
 ```
 
@@ -233,11 +237,11 @@ The `docker build` command builds a new docker image referencing our Dockerfile.
 
 `--tag` specifies an [image tag](https://docs.docker.com/engine/reference/commandline/tag/). An image tag is just a name we can use to reference the image, it is tagged `demo/api`.
 
-If your goal is to publish to [DockerHub](https://hub.docker.com/) you can make a private or public image. The basic format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username. 
+If your goal is to publish to [DockerHub](https://hub.docker.com/) you can make a private or public image. The basic format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username.
 
 ### Creating the React Dockerfile
 
-Add a new `Dockerfile` to the client folder and open it. 
+Add a new `Dockerfile` to the client folder and open it.
 
 ```
 touch client/Dockerfile
@@ -258,8 +262,8 @@ WORKDIR /client
 # 4. Copy both package.json and package-lock.json into /client in the image's filesystem
 COPY package*.json ./
 
-# 5. Install the production node_modules and clean up the cache 
-RUN npm ci \ 
+# 5. Install the production node_modules and clean up the cache
+RUN npm ci \
     && npm cache clean --force
 
 # 5. Extend the base stage to create a new stage named dev
@@ -292,7 +296,7 @@ RUN npm config list
 # 13. Change directory
 WORKDIR /client/app
 
-# 14. Provide defaults for an executing container. 
+# 14. Provide defaults for an executing container.
 CMD ["npm", "run", "start"]
 
 # 15. Extend the dev stage and create a new stage called test
@@ -349,7 +353,7 @@ With docker-compose we can run a collection of containers with one command. It m
 In the project root, create a `docker-compose.yml` file and open it.
 
 ```
-touch docker-compose.yml        
+touch docker-compose.yml
 ```
 
 Add the following:
@@ -531,7 +535,7 @@ Create a `secrets` folder in the project root.
 mkdir secrets
 ```
 
- Add the following secret files.
+Add the following secret files.
 
 ```
 └── secrets
@@ -571,7 +575,7 @@ docker network create traefik-public
 docker volume create postgres-db
 ```
 
-Navigate to your host machine's  `/etc/hosts` file and open it. 
+Navigate to your host machine's `/etc/hosts` file and open it.
 
 ```
 sudo vim /etc/hosts
@@ -580,7 +584,7 @@ sudo vim /etc/hosts
 Add an additional line containing the following domains.
 
 ```
-127.0.0.1       client.local api.local debug.api.local traefik.api.local pgadmin.local 
+127.0.0.1       client.local api.local debug.api.local traefik.api.local pgadmin.local
 ```
 
 ### Demo
@@ -614,11 +618,11 @@ docker volume remove postgres-db
 
 # Using Traefik
 
-Our docker-compose.yml file was already configured to generate self-signed certificates with Traefik. 
+Our docker-compose.yml file was already configured to generate self-signed certificates with Traefik.
 
 You might be wondering what [Traefik](https://containo.us/traefik/) is in the first place.
 
-Traefik's documentation states: 
+Traefik's documentation states:
 
 > Traefik is an open-source Edge Router that makes publishing your services a fun and easy experience. It receives requests on behalf of your system and finds out which components are responsible for handling them.
 >
@@ -660,13 +664,13 @@ Revisit the `traefik` service in our compose file.
       - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 ```
 
-We leverage the official Traefik image from DockerHub, version 2.1.2. We can configure Traefik using command line flags and labels. 
+We leverage the official Traefik image from DockerHub, version 2.1.2. We can configure Traefik using command line flags and labels.
 
-**\*_\*Note\**:_** _You can also configure Traefik using TOML files and YAML files._
+**\*_\*Note\*\*:_** _You can also configure Traefik using TOML files and YAML files._
 
 ![](/media/screen-shot-2020-01-12-at-17.25.23.png)
 
-I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one docker-compose.yml file to set everything up. 
+I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one docker-compose.yml file to set everything up.
 
 ## Line by Line: How It Works
 
@@ -782,7 +786,7 @@ Now revisit the `client` service.
 ## Line by Line: How It Works
 
 ```
-- "traefik.enable=true" 
+- "traefik.enable=true"
 ```
 
 Tell Traefik to include the service in its routing configuration.
@@ -791,7 +795,7 @@ Tell Traefik to include the service in its routing configuration.
 - "traefik.http.routers.client.tls=true"
 ```
 
-To update the router configuration automatically attached to the application, we add labels starting with `traefik.http.routers.{router-name-of-your-choice}` followed by the option you want to change.  In this case, we enable tls encryption.
+To update the router configuration automatically attached to the application, we add labels starting with `traefik.http.routers.{router-name-of-your-choice}` followed by the option you want to change. In this case, we enable tls encryption.
 
 ```
 - "traefik.http.routers.client.rule=Host(`client.local`)"
@@ -811,7 +815,7 @@ Configure Traefik to expose the container on the websecure entrypoint.
 
 Tell Traefik that the container will be exposed on port 3000 internally.
 
-Before Traefik, I was configuring a nginx reverse proxy from scratch. Each time I added an additional service I had to update my nginx config. Not only is this not scalable it became easy to make a mistake. With Traefik, reverse proxying services is easy. 
+Before Traefik, I was configuring a nginx reverse proxy from scratch. Each time I added an additional service I had to update my nginx config. Not only is this not scalable it became easy to make a mistake. With Traefik, reverse proxying services is easy.
 
 # Using Makefiles
 
@@ -820,14 +824,14 @@ It can be a hassle to type various docker commands. [GNU Make](https://www.gnu.o
 Here's an example makefile:
 
 ```
-#!make 
+#!make
 hello: hello.c
   gcc hello.c -o hello
 ```
 
 The main feature we care about is:
 
-> \[ The ability ] to build and install your package without knowing the details of how that is done -- because these details are recorded in the makefile that you supply. 
+> \[ The ability ] to build and install your package without knowing the details of how that is done -- because these details are recorded in the makefile that you supply.
 >
 > \-- https://www.gnu.org/software/make/
 
@@ -836,16 +840,16 @@ The syntax is:
 
 ```
 target: prerequisite prerequisite prerequisite ...
-(TAB) commands 
+(TAB) commands
 ```
 
-_**\*\*Note\*\*:** targets and prerequisites don't have to be files._ 
+_**\*\*Note\*\*:** targets and prerequisites don't have to be files._
 
-In the command line, we would run this example makefile by typing `make` or `make hello`. Both would work because when a target is not specified the first target in the makefile is executed. 
+In the command line, we would run this example makefile by typing `make` or `make hello`. Both would work because when a target is not specified the first target in the makefile is executed.
 
 ## Creating the Makefile
 
-Create a `makefile` in your project root and open it. 
+Create a `makefile` in your project root and open it.
 
 ```
 touch makefile
@@ -901,7 +905,7 @@ down:
 	docker-compose down
 	@echo $(SUCCESS)
 
-tidy: 
+tidy:
 	@echo [ cleaning up unused $(service) dependencies... ]
 	@make exec service="api" cmd="go mod tidy"
 
@@ -955,9 +959,9 @@ make
 
 When you execute a target, each command in the target's command body will be printed to stdout in a self documenting way and then executed. If you don't want a command printed to stdout but you want it executed, you can add the "@" symbol before it. Makefile comments are preceded by a "#" symbol. Using "@#" before a command will hide it from stdout and never execute.
 
-I added documentation to every target using `echo` to describe what each one does. 
+I added documentation to every target using `echo` to describe what each one does.
 
-Our makefile now creates our an external database volume and 2 networks. We needed a way to test if we have done this already. 
+Our makefile now creates our an external database volume and 2 networks. We needed a way to test if we have done this already.
 
 ```
 ifeq (,$(findstring postgres-net,$(NETWORKS)))
@@ -969,7 +973,7 @@ If we find the `postgres-net` network in `$(NETWORKS)` we do nothing, otherwise 
 
 ## Variables
 
-Variables can be defined at the top of a Makefile and referenced later. 
+Variables can be defined at the top of a Makefile and referenced later.
 
 ```
 #!make
@@ -986,8 +990,8 @@ Environment variables from a .env file can be referenced as long as you include 
 #!make
 include .env
 
-target:     
-    echo ${MY_ENV_VAR} 
+target:
+    echo ${MY_ENV_VAR}
 ```
 
 ## Phony Targets
@@ -998,7 +1002,7 @@ A makefile can't distinguish between a file target and a phony target.
 >
 > \-- https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
 
- Each of our commands are `.PHONY:` targets because they don't represent files.
+Each of our commands are `.PHONY:` targets because they don't represent files.
 
 # Using Postgres
 
@@ -1024,13 +1028,13 @@ select name, price from products
 
 The `debug-db` target uses an advanced command line interface for Postgres called [pgcli](https://www.pgcli.com/).
 
-This is great. We now have a user friendly terminal experience with syntax highlighting and auto completion. 
+This is great. We now have a user friendly terminal experience with syntax highlighting and auto completion.
 
 ![](/media/screen-shot-2020-01-12-at-21.43.06.png)
 
 ## PGAdmin4: Debugging Postgres in the Browser
 
-Not everyone likes the terminal experience when working with Postgres. We also have a browser option using [pgAdmin4](https://www.pgadmin.org/download/pgadmin-4-container/). 
+Not everyone likes the terminal experience when working with Postgres. We also have a browser option using [pgAdmin4](https://www.pgadmin.org/download/pgadmin-4-container/).
 
 To login, the email is `test@example.com` and the password is `SuperSecret.` If you want to change these values they are located in the docker-compose.yml file. Change the environment variables `PGADMIN_DEFAULT_EMAIL` and `PGADMIN_DEFAULT_PASSWORD` to whatever you want.
 
@@ -1056,7 +1060,7 @@ Under the "Connection" tab, fill in the host name which should be `db` unless yo
 
 ## Making Postgres Database Backups
 
-Making database backups of your Postgres database is straight forward. 
+Making database backups of your Postgres database is straight forward.
 
 ```
 dump:
@@ -1073,11 +1077,11 @@ make dump
 
 You're probably wondering how the Postgres database got seeded with data in the first place.
 
-The official Postgres image states: 
+The official Postgres image states:
 
-> If you would like to do additional initialization in an image derived from this one, add one or more \*.sql, \*.sql.gz, or *.sh scripts under /docker-entrypoint-initdb.d (creating the directory if necessary).
+> If you would like to do additional initialization in an image derived from this one, add one or more \*.sql, \*.sql.gz, or \*.sh scripts under /docker-entrypoint-initdb.d (creating the directory if necessary).
 >
-> After the entrypoint calls initdb to create the default postgres user and database, it will run any \*.sql files, run any executable \*.sh scripts, and source any non-executable *.sh scripts found in that directory to do further initialization before starting the service.
+> After the entrypoint calls initdb to create the default postgres user and database, it will run any \*.sql files, run any executable \*.sh scripts, and source any non-executable \*.sh scripts found in that directory to do further initialization before starting the service.
 >
 > \-- https://hub.docker.com/_/postgres
 
@@ -1163,7 +1167,7 @@ We use `dlv debug` to compile and begin debugging the main package located in th
 make debub-api
 ```
 
-Go to `/api/internal/handlers.go` and place a break point in one of the handlers. Within VSCode, click the "Launch Remote" button in the debugger tab. Next, navigate to the route that triggers the handler. You should see the editor pause where you placed the break point. 
+Go to `/api/internal/handlers.go` and place a break point in one of the handlers. Within VSCode, click the "Launch Remote" button in the debugger tab. Next, navigate to the route that triggers the handler. You should see the editor pause where you placed the break point.
 
 ![](/media/screen-shot-2020-01-12-at-21.24.33.png)
 
