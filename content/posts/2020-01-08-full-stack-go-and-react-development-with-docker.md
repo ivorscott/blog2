@@ -95,10 +95,11 @@ Open VSCode or [install it](https://code.visualstudio.com/download).
 
 Install these two extensions.
 
-1. [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go)
-   Adds rich language support for the Go language.
-2. [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
-   Adds syntax highlighting, commands, hover tips, and linting for docker related files.
+1\) [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) \
+ Adds rich language support for the Go language.
+
+2\) [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
+ Adds syntax highlighting, commands, hover tips, and linting for docker related files.
 
 ## Go Modules
 
