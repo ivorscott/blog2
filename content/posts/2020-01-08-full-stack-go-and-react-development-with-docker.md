@@ -63,8 +63,6 @@ Docker allows you to package your app and host it on any operating system. This 
 
 Docker supports the full software lifecycle from development to production. With Docker, software delivery doesn't have to be a painful and unpredictable process.
 
-![use-docker](/media/screen-shot-2020-01-05-at-13.38.25.png "It works on my machine (Slap) --Use Docker!")
-
 ## 3 Essentail Concepts
 
 Using Docker often starts with creating a Dockerfile, then building an image, and finally running one or more containers. 
@@ -82,6 +80,8 @@ A Dockerfile is a recipe of instructions for making images. Each instruction for
 **3. Containers**
 
 A Docker container is an app instance derived from a particular Docker Image. A container is not a virtual machine. They differ because each container doesn't require its own operating system. Containers on a single host will actually share a single operating system. This makes them lightweight, since they require less system resources and allows us to run many applications or containers on one machine.
+
+![use-docker](/media/screen-shot-2020-01-05-at-13.38.25.png "It works on my machine (Slap) --Use Docker!")
 
 # Setting Up VSCode
 
@@ -340,7 +340,7 @@ With our Docker images building successfully we are ready to run our application
 
 _**\*\*Note\*\*:** _[_Kubernetes_](https://kubernetes.io/) _is another popular production grade orchestrator. In development, I normally don't use an orchestrator. In future posts I will touch on both Docker Swarm and Kubernetes in production._
 
-With `docker-compose` we can run a collection of containers with one command. It makes running multiple containers far easier especially when containers have relationships and depend on one another.
+With docker-compose we can run a collection of containers with one command. It makes running multiple containers far easier especially when containers have relationships and depend on one another.
 
 In the project root, create a `docker-compose.yml` file and open it.
 
@@ -542,7 +542,7 @@ touch secrets/postgres_db secrets/postgres_passwd secrets/postgres_user
 
 In each file add some secret value.
 
-The following code in our `docker-compose.yml` file tells docker-compose that the volume, and networks will be created beforehand (or externally).
+The following code in our docker-compose.yml file tells docker-compose that the volume, and networks will be created beforehand (or externally).
 
 ```
 volumes:
@@ -587,7 +587,7 @@ docker-compose up
 
 In two separate browser tabs, navigate to <https://api.local/products> and then <https://client.local>
 
-**\*\*Note\*\*:** In your browser, you may see warnings prompting you to click a link to continue to the requested page. This is quite common when using self-signed certificates and shouldn't be a reason of concern.
+_**\*\*Note\*\*:** In your browser, you may see warnings prompting you to click a link to continue to the requested page. This is quite common when using self-signed certificates and shouldn't be a reason of concern._
 
 The reason we are using self-signed certificates in the first place is to replicate the production environment as much as possible.
 
@@ -610,7 +610,7 @@ docker volume remove postgres-db
 
 # Self-signed Certificates with Traefik
 
-Our `docker-compose.yml` file was already configured to generate self-signed certificates with Traefik. 
+Our docker-compose.yml file was already configured to generate self-signed certificates with Traefik. 
 
 You might be wondering what [Traefik](https://containo.us/traefik/) is in the first place.
 
@@ -622,7 +622,7 @@ Traefik's documentation states:
 >
 > \-- https://docs.traefik.io/#the-traefik-quickstart-using-docker
 
-Revisit the traefik service in our compose file.
+Revisit the `traefik` service in our compose file.
 
 ```
  traefik:
@@ -658,9 +658,9 @@ Revisit the traefik service in our compose file.
 
 We leverage the official traefik image from DockerHub, version 2.1.2. We can configure Traefik using command line flags. 
 
-**\*\*Note\*\*:**There are 3 ways to configure Traefik. You can use TOML files, YAML files or CLI flags.
+**\*_\*Note\**:_**_There are 3 ways to configure Traefik. You can use TOML files, YAML files or CLI flags._
 
-I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one `docker-compose.yml` file to set everything up. 
+I prefer using CLI flags because I don't want to worry about storing the TOML file in production. I also like the idea of only relying on one docker-compose.yml file to set everything up. 
 
 ![](/media/screen-shot-2020-01-12-at-17.25.23.png)
 
@@ -753,7 +753,7 @@ The next group of labels creates a router named http-catchall that will catch al
 - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 ```
 
-Revisit the client service.
+Revisit the `client` service.
 
 ```
   client:
@@ -835,7 +835,7 @@ target: prerequisite prerequisite prerequisite ...
 (TAB) commands 
 ```
 
-**\*\*Note\*\*:** targets and prerequisites don't have to be files. 
+_**\*\*Note\*\*:** targets and prerequisites don't have to be files._ 
 
 In the command line, we would run this example makefile by typing `make` or `make hello`. Both would work because when a target is not specified the first target in the makefile is executed. 
 
@@ -1042,7 +1042,7 @@ The two tabs you need to modify are "General" and "Connection". Add the name of 
 
 ![](/media/screen-shot-2020-01-09-at-20.59.11.png)
 
-Under the "Connection" tab, fill in the host name which should be `db` unless you changed it in your `docker-compose.yml` file. Make your database the maintenance database. Then add your username and password and check save password.
+Under the "Connection" tab, fill in the host name which should be `db` unless you changed it in your docker-compose.yml file. Make your database the maintenance database. Then add your username and password and check save password.
 
 ![](/media/screen-shot-2020-01-09-at-21.00.08.png)
 
@@ -1096,7 +1096,7 @@ EOSQL
 fi
 ```
 
-In our docker-compose file, `create-db.sh` is bind mounted into the db container:
+In our docker-compose.yml file, `create-db.sh` is bind mounted into the db container:
 
 ```
     volumes:
@@ -1108,11 +1108,13 @@ The script only runs if a backup doesn't exist. That way, when you make a dump o
 
 # Live Reloading a Go API
 
-Our go api is already reloadable thanks to this line in our `docker-compose.yml `file.
+Our go api is already reloadable thanks to this line in our docker-compose.yml file.
 
 ```
 CompileDaemon --build="go build -o main ./cmd/api" --command=./main
 ```
+
+If your familiar with Node, [Compile Daemon](https://github.com/githubnemo/CompileDaemon) watches your .go files and restarts your server just like nodemon.
 
 `--build` is used to specify the command we want to run when rebuilding (this flag is required).
 
@@ -1134,8 +1136,6 @@ Go to `/api/internal/handlers.go` and place a break point in one of the handlers
 
 ![](/media/screen-shot-2020-01-12-at-21.24.33.png)
 
-![](/media/screen-shot-2020-01-12-at-21.30.16.png)
-
 # Testing
 
 ### Demo
@@ -1149,8 +1149,14 @@ make test-api
 
 ![](/media/screen-shot-2020-01-12-at-21.30.16.png)
 
+In your CI build system you can simply build the test stage of your docker images.
+
 ```
 docker build --target test --tag demo/client:test ./client
+```
+
+```
+docker build --target test --tag demo/api:test ./api
 ```
 
 # Conclusion
