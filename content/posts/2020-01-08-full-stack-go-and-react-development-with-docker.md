@@ -336,7 +336,8 @@ In the root directory run the following to build the client development image:
 docker build --target dev --tag demo/client ./client
 ```
 
-In this section, we saw how we use Dockerfiles to package up our application binaries with dependencies. We also used the `docker build` command to manually build our docker images. In the next section we will use `docker-compose` to build our images and run containers.
+In this section, we saw how Dockerfiles can be used to package up our application binaries with dependencies.
+We also used multi-stage builds to define different images in one Dockerfile: for dev, test and production. Building images was performed manually by running the `docker build` command and we supplied the `--target` flag to select a single stage in our multi-stage setup. In the next section we will use `docker-compose` to build images and run containers.
 
 # Docker Compose
 
@@ -607,7 +608,7 @@ You should see the products being shown in the react app, meaning the `traefik`,
 
 ### Cleaning up
 
-Run the following to stop and remove all the containers we created with the `docker-compose up` command. In addition to that also remove the external volume and networks we created. In the _Using Makefiles_ section, our makefile will create these for us.
+Run `docker-compose down` to stop and remove all the containers we created with the `docker-compose up` command. In addition to that also remove the external volume and networks we created. In the _Using Makefiles_ section, the makefile will create these for us.
 
 ```
 docker-compose down
@@ -795,7 +796,13 @@ Tell Traefik to include the service in its routing configuration.
 - "traefik.http.routers.client.tls=true"
 ```
 
-To update the router configuration automatically attached to the application, we add labels starting with `traefik.http.routers.{router-name-of-your-choice}` followed by the option you want to change. In this case, we enable tls encryption.
+To update the router configuration automatically attached to the application, we add labels starting with:
+
+```
+traefik.http.routers.{router-name-of-your-choice}
+```
+
+followed by the option you want to change. In this case, we enable tls encryption.
 
 ```
 - "traefik.http.routers.client.rule=Host(`client.local`)"
@@ -961,7 +968,9 @@ When you execute a target, each command in the target's command body will be pri
 
 I added documentation to every target using `echo` to describe what each one does.
 
-Our makefile now creates our an external database volume and 2 networks. We needed a way to test if we have done this already.
+Our makefile creates an external database volume and 2 networks when we run `make` or `make api`. We don't want to do this a second time. So we need a way to test if we've already done this step.
+
+This is done with the following code:
 
 ```
 ifeq (,$(findstring postgres-net,$(NETWORKS)))
@@ -969,7 +978,7 @@ ifeq (,$(findstring postgres-net,$(NETWORKS)))
 endif
 ```
 
-If we find the `postgres-net` network in `$(NETWORKS)` we do nothing, otherwise we create the network. The conditional statement seems a bit strange because the first argument in the condition is empty, perhaps it can be better understood as `ifeq (null,$(findstring postgres-net,$(NETWORKS)))` but actually the code above is the proper syntax.
+If we find the `postgres-net` network in the `$(NETWORKS)` variable we do nothing, otherwise we create the network. This conditional statement may seem a bit strange because the first argument in the condition is empty, perhaps it can be better understood as `ifeq (null,$(findstring A,$(B)))` but actually the code above is the proper syntax.
 
 ## Variables
 
@@ -980,9 +989,9 @@ Variables can be defined at the top of a Makefile and referenced later.
 NETWORKS="$(shell docker network ls)"
 ```
 
-## Environment Variables
-
 Using the syntax `$(shell <command>)` is one way to execute a command and store its value in a variable.
+
+## Environment Variables
 
 Environment variables from a .env file can be referenced as long as you include it at the top of the makefile.
 
@@ -1000,7 +1009,7 @@ A makefile can't distinguish between a file target and a phony target.
 
 > A phony target is one that is not really the name of a file; rather it is just a name for a recipe to be executed when you make an explicit request. There are two reasons to use a phony target: to avoid a conflict with a file of the same name, and to improve performance.
 >
-> \-- https://www.gnu.org/software/make/manual/html_node/Phony-Targets.html
+> \-- https://bit.ly/370xohe
 
 Each of our commands are `.PHONY:` targets because they don't represent files.
 
@@ -1044,19 +1053,19 @@ Navigate to [https://pgadmin.local ](https://pgadmin.local)in your browser and l
 
 Click on "Add New Server".
 
-![](/media/screen-shot-2020-01-09-at-20.58.30.png)
+![](/media/screen-shot-2020-01-13-at-11.04.40.png)
 
 The two tabs you need to modify are "General" and "Connection". Add the name of the database under General.
 
-![](/media/screen-shot-2020-01-09-at-20.59.11.png)
+![](/media/screen-shot-2020-01-13-at-11.07.36.png)
 
-Under the "Connection" tab, fill in the host name which should be `db` unless you changed it in your docker-compose.yml file. Make your database the maintenance database. Then add your username, password and check save password. Lastly, click "Save".
+Under the "Connection" tab, fill in the host name which should be `db` unless you changed it in your docker-compose.yml file. Then add your username, password and check save password. Finally, click "Save".
 
-![](/media/screen-shot-2020-01-09-at-21.00.08.png)
+![](/media/screen-shot-2020-01-13-at-11.27.02.png)
 
-![](/media/screen-shot-2020-01-09-at-21.03.59.png)
+To view a database table, you must first cascade the nested tree structure to find the table you wish to select. Then select the table view icon at the top of the page.
 
-![](/media/screen-shot-2020-01-09-at-21.04.07.png)
+![](/media/screen-shot-2020-01-13-at-11.08.55.png)
 
 ## Making Postgres Database Backups
 
@@ -1173,7 +1182,7 @@ Go to `/api/internal/handlers.go` and place a break point in one of the handlers
 
 # Testing
 
-Unit tests do not require you to have the applications running to make a test.
+Our development setup wouldn't be complete without testing. Here we will run two commands to execute unit tests on the client and server side. Since these are unit tests, you are not required to have the applications running to test.
 
 ### Demo
 
@@ -1198,4 +1207,4 @@ docker build --target test --tag demo/api:test ./api
 
 # Conclusion
 
-I hope you've learned a bunch about how you can build the ultimate Go and React development setup with Docker. No matter what language you use on the client and server side, the basic principles still apply. Enjoy improving your own developer workflow. Happy Coding.
+I hope you've learned a bunch about how you can build the ultimate Go and React development setup with Docker. No matter what language you use on the client or server side, the basic principles still apply. Enjoy improving your own developer workflow. Happy Coding.
