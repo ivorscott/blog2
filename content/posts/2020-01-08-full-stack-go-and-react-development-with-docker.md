@@ -345,7 +345,7 @@ With our Docker images building successfully we are ready to run our application
 
 `docker-compose` is a command line tool and configuration file for running containers. You should only use it for local development and test automation. It was never designed for production. For production, you are better off using a production grade orchestrator like Docker Swarm -- [here's why](https://github.com/BretFisher/ama/issues/8).
 
-_**\*\*Note\*\*:** _[_Kubernetes_](https://kubernetes.io/) _is another popular production grade orchestrator. In development, I normally don't use an orchestrator. In future posts I will touch on both Docker Swarm and Kubernetes in production._
+_**\*\*Note\*\*:** [Kubernetes](https://kubernetes.io/) is another popular production grade orchestrator. In development, I normally don't use an orchestrator. In future posts I will touch on both Docker Swarm and Kubernetes in production._
 
 With docker-compose we can run a collection of containers with one command. It makes running multiple containers far easier especially when containers have relationships and depend on one another.
 
