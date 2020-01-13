@@ -5,26 +5,25 @@ slug: ultimate-go-react-development-setup-with-docker
 draft: false
 date: 2020-01-08T12:54:37.547Z
 description: >-
-  Lately, I've been migrating from Node to Golang. With Node I had a great
-  development workflow, but I struggled to achieve one in Go. What I wanted was
-  the ability to live reload a Go API and to debug it with breakpoints while in
-  a container.In this tutorial we will setup the Ultimate Go and React
-  development environment with Docker.
+  Lately, I've been migrating from Node to Golang. Using Node, I had a great
+  fullstack development workflow, but I struggled to achieve one in Go. What I
+  wanted was the ability to live reload a Go API and debug it with breakpoints
+  while in a container. In this tutorial we'll setup the ultimate Go and React
+  development setup with Docker.
 category: development
 tags:
   - Delve Docker Golang Makefile Postgres Traefik VSCode
-socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 ---
 
 ![matthew-sleeper-kn8atn5_zgq-unsplash.jpg](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
 
 # Introduction
 
-Lately, I've been migrating from Node to Golang. With Node I had a great development workflow, but struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and to debug it with breakpoints while in a container. In this tutorial we will setup the Ultimate Go and React development environment with Docker.
+Lately, I've been migrating from Node to Golang. Using Node, I had a great fullstack development workflow, but I struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and debug it with breakpoints while in a container. In this tutorial we'll setup the ultimate Go and React development setup with Docker.
 
 I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a react app or even a Go API. It's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
 
-We focus on :
+We focus on:
 
 - [Getting Started](#getting-started)
 - [Docker Basics](#docker-basics)
