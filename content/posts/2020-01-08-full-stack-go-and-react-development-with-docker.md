@@ -22,17 +22,17 @@ I expect you to be familiar with fullstack development. I won't teach you every 
 
 We focus on :
 
-* [Getting Started](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#getting-started)
-* [Docker Basics](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#docker-basics)
-* [Setting Up VSCode](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#setting-up-vscode)
-* [Multi-stage Builds](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#multi-stage-builds)
-* [Docker Compose](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#docker-compose)
-* [Using Traefik](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#using-traefik)
-* [Using Makefiles](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#using-makefiles)
-* [Using Postgres](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#using-postgres)
-* [Live Reloading a Go API](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#live-reloading-a-go-api)
-* [Delve Debugging a Go API](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#delve-debugging-a-go-api)
-* [Testing](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#testing)
+* [Getting Started](#getting-started)
+* [Docker Basics](#docker-basics)
+* [Setting Up VSCode](#setting-up-vscode)
+* [Multi-stage Builds](#multi-stage-builds)
+* [Docker Compose](#docker-compose)
+* [Using Traefik](#using-traefik)
+* [Using Makefiles](#using-makefiles)
+* [Using Postgres](#using-postgres)
+* [Live Reloading a Go API](#live-reloading-a-go-api)
+* [Delve Debugging a Go API](#delve-debugging-a-go-api)
+* [Testing](#testing)
 
 # Getting started
 
@@ -373,7 +373,7 @@ services:
       - 80:80
       - 443:443
       - 8080:8080
-    volumes:
+    volumes:      # Required for Traefik to listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
     networks:
@@ -461,7 +461,7 @@ services:
       - "traefik.http.routers.debug-api.tls=true"
       - "traefik.http.routers.debug-api.rule=Host(`debug.api.local`)"
       - "traefik.http.routers.debug-api.entrypoints=websecure"
-      - "traefik.http.services.debug-api.loadbalancer.server.port=8888"
+      - "traefik.http.services.debug-api.loadbalancer.server.port=8888"      # run a container without the default seccomp profile      # https://github.com/go-delve/delve/issues/515
     security_opt:
       - "seccomp:unconfined"
     tty: true
@@ -720,8 +720,6 @@ Create an entrypoint named web on port 80 to handle http connections.
 
 Create an entrypoint named websecure on port 443 to handle https connections.
 
-
-
 Next we will cover the labels on the traefik service.
 
 ```
@@ -758,8 +756,6 @@ The next group of labels creates a router named http-catchall that will catch al
 - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
 - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 ```
-
-
 
 Now revisit the `client` service.
 
@@ -1149,7 +1145,7 @@ dlv debug --accept-multiclient --continue --headless --listen=:2345 --api-versio
 
 We use `dlv debug` to compile and begin debugging the main package located in the `./cmd/api/` directory.
 
-` --accept-multiclient` allows a headless server to accept multiple client connections.
+`--accept-multiclient` allows a headless server to accept multiple client connections.
 
 `--continue` continues the debugged process on start which is not the default.
 
