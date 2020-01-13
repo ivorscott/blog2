@@ -67,9 +67,9 @@ Docker is useful for operators, system admins, build engineers and developers.
 
 Docker allows you to package your app and host it on any operating system. This means no more, "It works on my machine" dialogue.
 
-Docker supports the full software lifecycle from development to production. With Docker, software delivery doesn't have to be a painful and unpredictable process.
+Docker supports the full software life cycle from development to production. With Docker, software delivery doesn't have to be a painful and unpredictable process.
 
-## 3 Essentail Concepts
+## 3 Essential Concepts
 
 Using Docker often starts with creating a Dockerfile, then building an image, and finally running one or more containers.
 
