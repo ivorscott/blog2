@@ -4,8 +4,7 @@ module.exports = {
   url: "https://ivorscott.netlify.com",
   pathPrefix: "/",
   title: "Art, Tech & Ideas",
-  subtitle: `I design, develop, and deploy Typescript Applications. 
-    Iterating through customer feedback to achieve product-market-fit for my organization and clients`,
+  subtitle: "I design, develop, and deploy.",
   copyright: "© All rights reserved.",
   disqusShortname: "ivorscott",
   postsPerPage: 4,
@@ -24,8 +23,7 @@ module.exports = {
   author: {
     name: "Ivor Scott",
     photo: "/photo.png",
-    bio: `I design, develop, and deploy.\n
-      Iterating through customer feedback to achieve product-market-fit.`,
+    bio: "I design, develop, and deploy.\n",
     contacts: {
       email: "ivor@devpie.io",
       twitter: "ivorsco77",
