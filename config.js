@@ -27,7 +27,8 @@ module.exports = {
     contacts: {
       email: "ivor@devpie.io",
       twitter: "ivorsco77",
-      github: "ivorscott"
+      github: "ivorscott",
+      cv: "https://hire.ivorscott.com"
     }
   }
 };
