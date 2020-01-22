@@ -209,7 +209,7 @@ RUN go test -v ./...
 # 14. Extend the test stage to create a new stage named build-stage
 FROM test as build-stage
 
-# 15. Provide defaults for an executing container.
+# 15. Build the api
 RUN go build -o main ./cmd/api
 
 # 16. Extend the scratch stage to create a new stage named prod
@@ -1174,7 +1174,7 @@ We use `dlv debug` to compile and begin debugging the main package located in th
 ### Demo
 
 ```
-make debub-api
+make debug-api
 ```
 
 Go to `/api/internal/handlers.go` and place a break point in one of the handlers. Within VSCode, click the "Launch Remote" button in the debugger tab. Next, navigate to the route that triggers the handler. You should see the editor pause where you placed the break point.
