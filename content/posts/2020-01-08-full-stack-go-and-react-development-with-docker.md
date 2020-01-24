@@ -18,6 +18,8 @@ socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 
 ![matthew-sleeper-kn8atn5_zgq-unsplash.jpg](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
 
+_Updated: January 24th, 2020_
+
 # Introduction
 
 Lately, I've been migrating from Node to Golang. Using Node, I had a great fullstack development workflow, but I struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and debug it with breakpoints while in a container. In this tutorial we'll setup the ultimate Go and React development setup with Docker.
@@ -158,7 +160,7 @@ touch api/Dockerfile
 Add the following:
 
 ```
-# 1. FROM sets the baseImage to use for subsequent instructions.
+# 1. FROM sets the baseImage to use for subsequent instructions
 # Use the Golang image as the base stage of a multi-stage routine
 FROM golang:1.13.5 as base
 
@@ -166,59 +168,74 @@ FROM golang:1.13.5 as base
 # Change directory
 WORKDIR /api
 
-# 3. COPY copy files or folders from source to the destination path in the image's filesystem
+# 3. Extend the base stage to create a new stage named dev
+FROM base as dev
+
+# 4. COPY copies files or folders from source to the destination path in the image's filesystem
 # Copy the go.mod and go.sum files to /api in the image's filesystem
 COPY go.* ./
 
-# 4. RUN executes commands on top of the current image as a new layer and commit the results.
+# 5. RUN executes commands on top of the current image as a new layer and commit the results
 # Install go module dependencies in the image's filesystem
 RUN go mod download
-
-# 5. Extend the base stage to create a new stage named dev
-FROM base as dev
 
 # 6. ENV sets an environment variable
 # Create GOPATH and PATH Environment variables
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
-# 7. Change directory
-WORKDIR $GOPATH/src
+# 7. Log go environment (for debugging)
+RUN go env
 
-# 8. Install development dependencies in $GOPATH/src
-RUN go get github.com/go-delve/delve/cmd/dlv
-RUN go get github.com/githubnemo/CompileDaemon
+# 8. Install development dependencies to debug and live reload api
+RUN go get github.com/go-delve/delve/cmd/dlv \
+    && go get github.com/githubnemo/CompileDaemon
 
-# 9. Change directory
-WORKDIR /api
 
-# 10. Provide meta data about the ports the container must EXPOSE
+# 9. Provide meta data about the ports the container must expose
 # port 4000 -> api port
 # port 2345 -> debugger port
 EXPOSE 4000 2345
 
-# 11. Extend the dev stage to create a new stage named test
+# 10. Extend the dev stage to create a new stage named test
 FROM dev as test
 
-# 12. Copy the remaining api code into /api in the image's filesystem
+# 11. Copy the remaining api code into /api in the image's filesystem
 COPY . .
 
-# 13. Run unit tests
-RUN go test -v ./...
+# 12. Disable CGO and run unit tests
+RUN export CGO_ENABLED=0 && \
+    go test -v ./...
 
-# 14. Extend the test stage to create a new stage named build-stage
+# 13. Extend the test stage to create a new stage named build-stage
 FROM test as build-stage
 
-# 15. Build the api
-RUN go build -o main ./cmd/api
+# 14. Build the api with "-ldflags" aka linker flags to reduce binary size
+# -s = disable symbol table
+# -w = disable DWARF generation
+RUN go build -ldflags "-s -w" -o main ./cmd/api
 
-# 16. Extend the scratch stage to create a new stage named prod
-FROM scratch as prod
+# 15. Extend the base stage to create a new stage named prod
+FROM base as prod
 
-# 17. Copy only the files we want from the build stage into the prod stage
+# 16. Copy only the files we want from the build stage into the prod stage
 COPY --from=build-stage /api/main main
 
-# 18. CMD Provide defaults for an executing container.
+# 17. Create a new group and user, recursively change directory ownership, then allow the binary to be executed
+RUN addgroup gopher && adduser -D -G gopher gopher \
+    && chown -R gopher:gopher /api && \
+    chmod +x ./main
+
+# 18. Change to a non-root user
+USER gopher
+
+# 19. Provide meta data about the port the container must expose
+EXPOSE 4000
+
+# 20. Define how Docker should test the container to check that it is still working
+HEALTHCHECK CMD [ "wget", "-q", "0.0.0.0:4000" ]
+
+# 21. Provide the default command for the production container
 CMD ["./main"]
 ```
 
@@ -227,7 +244,7 @@ CMD ["./main"]
 In the root directory run the following to build the api development image:
 
 ```
-docker build --target dev --tag demo/api ./api
+DOCKER_BUILDKIT=1 docker build --target dev --tag demo/api ./api
 ```
 
 The `docker build` command builds a new docker image referencing our Dockerfile.
@@ -239,6 +256,8 @@ The `docker build` command builds a new docker image referencing our Dockerfile.
 `--tag` specifies an [image tag](https://docs.docker.com/engine/reference/commandline/tag/). An image tag is just a name we can use to reference the image, it is tagged `demo/api`.
 
 If your goal is to publish to [DockerHub](https://hub.docker.com/) you can make a private or public image. The basic format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username.
+
+Lastly, `DOCKER_BUILDKIT=1` is a new feature that enables parallel build processing for faster builds. You can [read more here](https://brianchristner.io/what-is-docker-buildkit/).
 
 ### Creating the React Dockerfile
 
@@ -254,16 +273,13 @@ Add the following contents:
 # 1. Use the Node image as the base stage of a multi-stage routine
 FROM node:10.15.0-alpine as base
 
-# 2. Set the NODE_ENV Environment variable
-ENV NODE_ENV=production
-
-# 3. Set the working directory
+# 2. Set the working directory to /client
 WORKDIR /client
 
-# 4. Copy both package.json and package-lock.json into /client in the image's filesystem
+# 3. Copy both package.json and package-lock.json into /client in the image's filesystem
 COPY package*.json ./
 
-# 5. Install the production node_modules and clean up the cache
+# 4. Install only the production node_modules and clean up the cache
 RUN npm ci \
     && npm cache clean --force
 
@@ -274,59 +290,62 @@ FROM base as dev
 ENV NODE_ENV=development
 ENV PATH /client/node_modules/.bin:$PATH
 
-# 7. Provide meta data about the port the container must EXPOSE
+# 7. Provide meta data about the port the container must expose
 EXPOSE 3000
 
-# 8. Create a new directory and recursively change the ownership to the node user
-RUN mkdir /client/app && chown -R node:node .
+# 8. Create a new /app directory in /client
+RUN mkdir /client/app
 
-# 9. Switch to the node user
-USER node
-
-# 10. Install development dependencies
+# 9. Install development dependencies
 RUN npm i --only=development \
     && npm cache clean --force
 
-# 11. Patch create-react-app bug preventing self-signed certificate usage
+# 10. Patch create-react-app bug preventing self-signed certificate usage
 # https://github.com/facebook/create-react-app/issues/8075
 COPY patch.js /client/node_modules/react-dev-utils/webpackHotDevClient.js
 
-# 12. Print npm config for debugging purposes
+# 11. Print npm config for debugging purposes
 RUN npm config list
 
-# 13. Change directory
+# 12. Change directory
 WORKDIR /client/app
 
-# 14. Provide defaults for an executing container.
+# 13. Provide the default command for the development container
 CMD ["npm", "run", "start"]
 
-# 15. Extend the dev stage and create a new stage called test
+# 14. Extend the dev stage and create a new stage called test
 FROM dev as test
 
-# 16. Copy the remainder of the client folder source code into the image filesystem
+# 15. Copy the remainder of the client folder source code into the image's filesystem
 COPY . .
 
-# 17. Run node_module vulnerability checks
+# 16. Run node_module vulnerability checks
 RUN npm audit
 
-# 18. Run unit tests
+# 17. Run unit tests
 RUN npm test
 
-# 19. Extend the test stage to create a new stage named build-stage
+# 18. Extend the test stage to create a new stage named build-stage
 FROM test as build-stage
 
-# 20. Build the production static assets
+# 19. Build the production static assets
 RUN npm run build
 
-# 21. Extend Nginx image to create a new stage named prod
+# 20. Extend the Nginx image to create a new stage named prod
 FROM nginx:1.15-alpine as prod
 
-# 22. Provide meta data about the port the container must EXPOSE
+# 21. Copy only the files we want from the build stage into the prod stage
+COPY --from=build-stage /client/app/build /usr/share/nginx/html
+
+# 22. Copy non-root user nginx configuration
+# https://hub.docker.com/_/nginx
+COPY --from=build-stage /client/app/nginx /etc/nginx/
+
+# 23. Provide meta data about the port the container must expose
 EXPOSE 80
 
-# 23. Copy only the files we want from the build stage into the prod stage
-COPY --from=build-stage /client/app/build /usr/share/nginx/html
-COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
+# 24. Define how Docker should test the container to check that it is still working
+HEALTHCHECK CMD [ "wget", "-q", "0.0.0.0:80" ]
 ```
 
 ### Demo
@@ -334,7 +353,7 @@ COPY --from=build-stage /client/app/nginx.conf /etc/nginx/conf.d/default.conf
 In the root directory run the following to build the client development image:
 
 ```
-docker build --target dev --tag demo/client ./client
+DOCKER_BUILDKIT=1 docker build --target dev --tag demo/client ./client
 ```
 
 In this section, we saw how Dockerfiles can be used to package up our application binaries with dependencies.
@@ -1205,6 +1224,8 @@ docker build --target test --tag demo/client:test ./client
 ```
 docker build --target test --tag demo/api:test ./api
 ```
+
+In January I attended GoDays 2020 in Berlin. There was a wonderful presentation showcasing how to run integration tests in containers. If you wish to do this, check out this cool library [testcontainers-go](https://github.com/testcontainers/testcontainers-go).
 
 # Conclusion
 
