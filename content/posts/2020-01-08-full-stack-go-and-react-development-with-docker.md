@@ -18,7 +18,7 @@ socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 
 ![matthew-sleeper-kn8atn5_zgq-unsplash.jpg](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
 
-_Updated: January 24th, 2020_
+_Updated: January 25th, 2020_
 
 # Introduction
 
@@ -160,82 +160,91 @@ touch api/Dockerfile
 Add the following:
 
 ```
-# 1. FROM sets the baseImage to use for subsequent instructions
-# Use the Golang image as the base stage of a multi-stage routine
-FROM golang:1.13.5 as base
+# 1. FROM sets the base image to use for subsequent instructions
+# Use the golang alpine image as the base stage of a multi-stage routine
+FROM golang:1.13.6-alpine3.10 as base
 
 # 2. WORKDIR sets the working directory for any subsequent COPY, CMD, or RUN instructions
-# Change directory
+# Set the working directory to /api
 WORKDIR /api
 
-# 3. Extend the base stage to create a new stage named dev
+# 3. Extend aquasecurity's trivy image and create a new stage named trivy
+# Used for robust image scanning
+FROM aquasec/trivy:0.4.3 as trivy
+
+# 4. RUN executes commands on top of the current image as a new layer and commits the results
+# Scan the golang alpine image before production use
+RUN trivy golang:1.13.6-alpine3.10 && \
+    echo "No image vulnerabilities" > result
+
+# 5. Extend the base stage and create a new stage named dev
 FROM base as dev
 
-# 4. COPY copies files or folders from source to the destination path in the image's filesystem
+# 6. COPY copies files or folders from source to the destination path in the image's filesystem
 # Copy the go.mod and go.sum files to /api in the image's filesystem
 COPY go.* ./
 
-# 5. RUN executes commands on top of the current image as a new layer and commit the results
-# Install go module dependencies in the image's filesystem
+# 7. Install go module dependencies in the image's filesystem
 RUN go mod download
 
-# 6. ENV sets an environment variable
-# Create GOPATH and PATH Environment variables
+# 8. ENV sets an environment variable
+# Create GOPATH and PATH environment variables
 ENV GOPATH /go
 ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
 
-# 7. Log go environment (for debugging)
+# 9. Print go environment for debugging purposes
 RUN go env
 
-# 8. Install development dependencies to debug and live reload api
+# 10. Install development dependencies to debug and live reload api
 RUN go get github.com/go-delve/delve/cmd/dlv \
     && go get github.com/githubnemo/CompileDaemon
 
 
-# 9. Provide meta data about the ports the container must expose
+# 11. Provide meta data about the ports the container must expose
 # port 4000 -> api port
 # port 2345 -> debugger port
 EXPOSE 4000 2345
 
-# 10. Extend the dev stage to create a new stage named test
+# 12. Extend the dev stage and create a new stage named test
 FROM dev as test
 
-# 11. Copy the remaining api code into /api in the image's filesystem
+# 13. Copy the remaining api code into /api in the image's filesystem
 COPY . .
 
-# 12. Disable CGO and run unit tests
+# 14. Disable CGO and run unit tests
 RUN export CGO_ENABLED=0 && \
     go test -v ./...
 
-# 13. Extend the test stage to create a new stage named build-stage
+# 15. Extend the test stage and create a new stage named build-stage
 FROM test as build-stage
 
-# 14. Build the api with "-ldflags" aka linker flags to reduce binary size
+# 16. Build the api with "-ldflags" aka linker flags to reduce binary size
 # -s = disable symbol table
 # -w = disable DWARF generation
 RUN go build -ldflags "-s -w" -o main ./cmd/api
 
-# 15. Extend the base stage to create a new stage named prod
+# 17. Extend the base stage and create a new stage named prod
 FROM base as prod
 
-# 16. Copy only the files we want from the build stage into the prod stage
+# 18. Copy only the files we want from the build stage into the prod stage
+COPY --from=trivy result secure
 COPY --from=build-stage /api/main main
 
-# 17. Create a new group and user, recursively change directory ownership, then allow the binary to be executed
+# 19. Create a new group and user, recursively change directory ownership, then allow the binary to be executed
 RUN addgroup gopher && adduser -D -G gopher gopher \
     && chown -R gopher:gopher /api && \
     chmod +x ./main
 
-# 18. Change to a non-root user
+# 20. Change to a non-root user
 USER gopher
 
-# 19. Provide meta data about the port the container must expose
+# 21. Provide meta data about the port the container must expose
 EXPOSE 4000
 
-# 20. Define how Docker should test the container to check that it is still working
+# 22. Define how Docker should test the container to check that it is still working
 HEALTHCHECK CMD [ "wget", "-q", "0.0.0.0:4000" ]
 
-# 21. Provide the default command for the production container
+# 23. Provide the default command for the production container
 CMD ["./main"]
 ```
 
@@ -270,8 +279,8 @@ touch client/Dockerfile
 Add the following contents:
 
 ```
-# 1. Use the Node image as the base stage of a multi-stage routine
-FROM node:10.15.0-alpine as base
+# 1. Use the node apline image as the base stage of a multi-stage routine
+FROM node:13.7.0-alpine as base
 
 # 2. Set the working directory to /client
 WORKDIR /client
@@ -283,7 +292,7 @@ COPY package*.json ./
 RUN npm ci \
     && npm cache clean --force
 
-# 5. Extend the base stage to create a new stage named dev
+# 5. Extend the base stage and create a new stage named dev
 FROM base as dev
 
 # 6. Set the NODE_ENV and PATH Environment variables
@@ -304,10 +313,10 @@ RUN npm i --only=development \
 # https://github.com/facebook/create-react-app/issues/8075
 COPY patch.js /client/node_modules/react-dev-utils/webpackHotDevClient.js
 
-# 11. Print npm config for debugging purposes
+# 11. Print npm configuration for debugging purposes
 RUN npm config list
 
-# 12. Change directory
+# 12. Set the working directory to /client/app
 WORKDIR /client/app
 
 # 13. Provide the default command for the development container
@@ -322,29 +331,37 @@ COPY . .
 # 16. Run node_module vulnerability checks
 RUN npm audit
 
-# 17. Run unit tests
-RUN npm test
+# 17. Run unit tests in CI
+RUN CI=true npm test --env=jsdom
 
-# 18. Extend the test stage to create a new stage named build-stage
+# 18. Extend the test stage and create a new stage named build-stage
 FROM test as build-stage
 
 # 19. Build the production static assets
 RUN npm run build
 
-# 20. Extend the Nginx image to create a new stage named prod
-FROM nginx:1.15-alpine as prod
+# 20. Install aquasecurity's trivy for robust image scanning
+FROM aquasec/trivy:0.4.3 as trivy
 
-# 21. Copy only the files we want from the build stage into the prod stage
+# 21. Scan the nginx alpine image before production use
+RUN trivy nginx:1.17-alpine && \
+    echo "No image vulnerabilities" > result
+
+# 22. Extend the nginx apline image and create a new stage named prod
+FROM nginx:1.17-alpine as prod
+
+# 23. Copy only the files we want from the build stage into the prod stage
+COPY --from=trivy result secure
 COPY --from=build-stage /client/app/build /usr/share/nginx/html
 
-# 22. Copy non-root user nginx configuration
+# 24. Copy non-root user nginx configuration
 # https://hub.docker.com/_/nginx
 COPY --from=build-stage /client/app/nginx /etc/nginx/
 
-# 23. Provide meta data about the port the container must expose
+# 25. Provide meta data about the port the container must expose
 EXPOSE 80
 
-# 24. Define how Docker should test the container to check that it is still working
+# 26. Define how Docker should test the container to check that it is still working
 HEALTHCHECK CMD [ "wget", "-q", "0.0.0.0:80" ]
 ```
 
@@ -398,7 +415,8 @@ services:
       - 80:80
       - 443:443
       - 8080:8080
-    volumes:      # Required for Traefik to listen to the Docker events
+    volumes:
+      # Required for Traefik to listen to the Docker events
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
     networks:
@@ -423,6 +441,7 @@ services:
       - postgres_passwd
     environment:
       ADDR_PORT: 4000
+      CGO_ENABLED: 0
       POSTGRES_HOST: db
       POSTGRES_DB: /run/secrets/postgres_db
       POSTGRES_USER: /run/secrets/postgres_user
@@ -486,7 +505,9 @@ services:
       - "traefik.http.routers.debug-api.tls=true"
       - "traefik.http.routers.debug-api.rule=Host(`debug.api.local`)"
       - "traefik.http.routers.debug-api.entrypoints=websecure"
-      - "traefik.http.services.debug-api.loadbalancer.server.port=8888"      # run a container without the default seccomp profile      # https://github.com/go-delve/delve/issues/515
+      - "traefik.http.services.debug-api.loadbalancer.server.port=8888"
+      # run a container without the default seccomp profile
+      # https://github.com/go-delve/delve/issues/515
     security_opt:
       - "seccomp:unconfined"
     tty: true
@@ -943,11 +964,11 @@ exec:
 
 test-client:
 	@echo [ running client tests... ]
-	@make exec service="client" cmd="npm test"
+	docker-compose run client npm test
 
 test-api:
 	@echo [ running api tests... ]
-	@make exec service="api" cmd="go test -v ./..."
+	docker-compose run api go test -v ./...
 
 debug-api:
 	@echo [ debugging api... ]
