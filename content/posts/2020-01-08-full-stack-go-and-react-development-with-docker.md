@@ -24,7 +24,7 @@ _Updated: January 25th, 2020_
 
 Lately, I've been migrating from Node to Golang. Using Node, I had a great fullstack development workflow, but I struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and debug it with breakpoints while in a container. In this tutorial we'll setup the ultimate Go and React development setup with Docker.
 
-I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a react app or even a Go API. It's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
+I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a React app or even a Go API. It's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
 
 We focus on:
 
@@ -95,13 +95,16 @@ A Docker container is an app instance derived from a Docker Image. A container i
 
 Open VSCode or [install it](https://code.visualstudio.com/download).
 
-Install these two extensions.
+Install these three extensions.
 
 1\) [The Go Extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode.Go) \
  Adds rich language support for the Go language.
 
 2\) [The Docker Extension](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker) \
  Adds syntax highlighting, commands, hover tips, and linting for docker related files.
+
+3\) [The Hadolint Extension](https://marketplace.visualstudio.com/items?itemName=exiasr.hadolint) \
+ Integrates [hadolint](https://github.com/hadolint/hadolint), a Dockerfile linter, into VS Code.
 
 ## Go Modules
 
@@ -226,7 +229,7 @@ RUN go build -ldflags "-s -w" -o main ./cmd/api
 # 17. Extend the base stage and create a new stage named prod
 FROM base as prod
 
-# 18. Copy only the files we want from the build stage into the prod stage
+# 18. Copy only the files we want from a few stages into the prod stage
 COPY --from=trivy result secure
 COPY --from=build-stage /api/main main
 
@@ -266,7 +269,9 @@ The `docker build` command builds a new docker image referencing our Dockerfile.
 
 If your goal is to publish to [DockerHub](https://hub.docker.com/) you can make a private or public image. The basic format DockerHub expects is username/image-name. Since we are not publishing images in this tutorial `demo` doesn't have to be your real username.
 
-Lastly, `DOCKER_BUILDKIT=1` is a new feature that enables parallel build processing for faster builds. You can [read more here](https://brianchristner.io/what-is-docker-buildkit/).
+`DOCKER_BUILDKIT=1` is a new feature that enables parallel build processing for faster builds. You can [read more here](https://brianchristner.io/what-is-docker-buildkit/).
+
+Our Dockerfiles leverage Aqua Security's [trivy](https://github.com/aquasecurity/trivy) image scanner. Docker images occasionally have vulnerabilities. Image scanners can help by alerting us of any issues. Unlike most image scanners, trivy has no problem detecting vulnerabilities in apline images. Other image scanners run into issues because light weight apline images remove resources required to produce accurate image scans. Watch this [video](https://youtu.be/UMtyHmu3_Do?t=211) to learn more.
 
 ### Creating the React Dockerfile
 
@@ -350,7 +355,7 @@ RUN trivy nginx:1.17-alpine && \
 # 22. Extend the nginx apline image and create a new stage named prod
 FROM nginx:1.17-alpine as prod
 
-# 23. Copy only the files we want from the build stage into the prod stage
+# 23. Copy only the files we want from a few stages into the prod stage
 COPY --from=trivy result secure
 COPY --from=build-stage /client/app/build /usr/share/nginx/html
 
