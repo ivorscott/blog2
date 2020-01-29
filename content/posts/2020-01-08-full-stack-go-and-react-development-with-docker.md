@@ -18,7 +18,7 @@ socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 
 ![matthew-sleeper-kn8atn5_zgq-unsplash.jpg](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
 
-_Updated: January 25th, 2020_
+_Updated: January 29th, 2020_
 
 # Introduction
 
@@ -165,7 +165,7 @@ Add the following:
 ```
 # 1. FROM sets the base image to use for subsequent instructions
 # Use the golang alpine image as the base stage of a multi-stage routine
-FROM golang:1.13.6-alpine3.10 as base
+FROM golang:1.14-alpine as base
 
 # 2. WORKDIR sets the working directory for any subsequent COPY, CMD, or RUN instructions
 # Set the working directory to /api
@@ -173,11 +173,11 @@ WORKDIR /api
 
 # 3. Extend aquasecurity's trivy image and create a new stage named trivy
 # Used for robust image scanning
-FROM aquasec/trivy:0.4.3 as trivy
+FROM aquasec/trivy:0.4.4 as trivy
 
 # 4. RUN executes commands on top of the current image as a new layer and commits the results
 # Scan the golang alpine image before production use
-RUN trivy golang:1.13.6-alpine3.10 && \
+RUN trivy --debug --timeout 4m golang:1.14-alpine && \
     echo "No image vulnerabilities" > result
 
 # 5. Extend the base stage and create a new stage named dev
@@ -494,6 +494,7 @@ services:
       - postgres_passwd
     environment:
       ADDR_PORT: 8888
+      CGO_ENABLED: 0
       POSTGRES_HOST: db
       POSTGRES_DB: /run/secrets/postgres_db
       POSTGRES_USER: /run/secrets/postgres_user
@@ -1251,7 +1252,7 @@ docker build --target test --tag demo/client:test ./client
 docker build --target test --tag demo/api:test ./api
 ```
 
-In January I attended GoDays 2020 in Berlin. There was a wonderful presentation showcasing how to run integration tests in containers. If you wish to do this, check out this cool library [testcontainers-go](https://github.com/testcontainers/testcontainers-go).
+In January I attended GoDays 2020 in Berlin. There was a wonderful presentation showcasing how to run integration and end to end tests in containers. If you wish to do this, check out the [slides](https://speakerdeck.com/godays/integration-and-end-to-end-testing-with-testcontainers-go-nikolay-kuznetsov-and-erdem-toraman-zalando). The libraries being used are [testcontainers-go](https://github.com/testcontainers/testcontainers-go) and [moby-ryuk](https://github.com/testcontainers/moby-ryuk).
 
 # Conclusion
 
