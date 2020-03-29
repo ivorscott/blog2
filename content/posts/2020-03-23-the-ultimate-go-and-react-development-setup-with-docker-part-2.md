@@ -5,19 +5,17 @@ slug: ultimate-go-react-development-setup-with-docker-part2
 draft: true
 date: 2020-03-23T10:55:15.296Z
 description: >-
-  This post builds upon the previous with a focus on building a complete API
-  example. There's much to cover. First I address weaknesses and improvements to
-  the first post in the series. Most of this post covers backend improvements.
-  The frontend switched to Typescript but won't be discussed in detail. 
+  This post is covers “Building A Better API”. We begin with a demo, then jump into its components and why they’re important.
 category: Development
 tags:
   - Docker Golang React Makefile Postgres Testing Migrations Seeding
 ---
+
 # Building A Better API
 
 # Introduction
 
-My [first post](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker) covered _"Building A Workflow"_. We started with a sample project and containerized it. I introduced how Docker, docker-compose, and Makefiles work together to build a development routine. We incorporated multi-stage docker builds, Postgres, and Traefik, along with live reloading, debugging and testing. This post is covers _"Building A Better API"._ We begin a demo, then jump into its components and why they're important. There's no project starter this time but I provide the [demo's source code](https://github.com/ivorscott/go-delve-reload/tree/part2). 
+The [first post](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker) is this series covered _"Building A Workflow"_. Which introduced how Docker and Makefiles can work together. We incorporated multi-stage docker builds, Postgres, and Traefik, along with live reloading, debugging and testing. This post is covers _"Building A Better API"._ We start with a demo, then jump into its components and learn why they're important and how they're implemented.
 
 I plan on writing 3 more posts in this series.
 
@@ -31,26 +29,26 @@ This post is heavily influenced by [Ardan labs service training](https://github.
 
 We focus on:
 
-* [Getting Started](#getting-started)
-* [Setup Changes From Part 1](#setup-changes-from-part-1)
-* [Graceful Shutdown](#graceful-shutdown)
-* Seeding & Migrations (With Go-Migrate)
-* [Package Oriented Design](#package-oriented-design)
-* Fluent SQL Generation (With Squirrel)
-* [Error Handling](#error-handling)
-* [Cancellation](#cancellation)
-* [Request Validation](#request-validation)
-* [Request Logging](#request-logging)
-* Integration Testing (With TestContainers-go)
+- [Getting Started](#getting-started)
+- [Initial Changes From Part 1](#initial-changes-from-part-1)
+- [Graceful Shutdown](#graceful-shutdown)
+- [Seeding & Migrations (With Go-Migrate)](#seeding--migrations)
+- [Package Oriented Design](#package-oriented-design)
+- [Fluent SQL Generation (With Squirrel)](#fluent-sql-generation)
+- [Error Handling](#error-handling)
+- [Cancellation](#cancellation)
+- [Request Validation](#request-validation)
+- [Request Logging](#request-logging)
+- [Integration Testing (With TestContainers-go)](#integration-testing)
 
 ## Prerequisites
 
-* [VSCode](https://code.visualstudio.com/)
-* [Docker](https://www.docker.com/products/docker-desktop)
+- [VSCode](https://code.visualstudio.com/)
+- [Docker](https://www.docker.com/products/docker-desktop)
 
 ## Requirements
 
-* [Setting up VSCode](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#setting-up-vscode)
+- [Setting up VSCode](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#setting-up-vscode)
 
 # Getting Started
 
@@ -67,10 +65,10 @@ git checkout part2
 The project root looks like this:
 
 ```
-├── /.vscode
-├── /api
-├── /client
-├── /docs
+├── .vscode
+├── api
+├── client
+├── docs
 ├── .env.sample
 ├── .gitignore
 ├── README.md
@@ -80,11 +78,13 @@ The project root looks like this:
 
 ## The Workflow
 
-The workflow changed significantly to support seeding and migrations. In my previous post the database was automatically populated but when more control is required that might not be suitable.
+The workflow changed significantly to support seeding and migrations. In my previous post the database was automatically populated, but when more control is required we can populate it ourselves.
 
-Our goal is going from an empty database to a populated one. We will make a couple migrations and seed the database before running client and api containers.
+Our goal is going from an empty database to a seeded one. First, we will create a database container in the background, make a couple migrations, then seed the database before running the client and api containers.
 
-### Step 1) Copy the .env.sample file and rename it to .env.
+### Step 1) Rename .env.sample to .env
+
+The contents of `.env` should look like this:
 
 ```
 # DEVELOPMENT ENVIRONMENT VARIABLES
@@ -98,6 +98,8 @@ POSTGRES_PASSWORD=postgres
 POSTGRES_HOST=db
 POSTGRES_NET=postgres-net
 ```
+
+No additional modifications are required.
 
 ### Step 2) Unblock port 5432 for postgres
 
@@ -114,18 +116,31 @@ killall postgresql
 
 ### Step 3) Create self-signed certificates
 
+The next command moves generated certificates to the `./api/tls/` directory.
+
 ```
-make cert # moves generated certs to ./api/tls/
+make cert
 ```
 
 ### Step 4) Setup up the Postgres container
 
+Run the database in the background.
+
 ```
-make db # runs database in the background
+make db
+```
+
+#### Create your first migration
+
+Make a migration to create the products table.
+
+```
 make migration create_products_table
 ```
 
-Then add sql to both up & down migrations files found under: `./api/internal/schema/migrations/`.
+Then add sql to both up & down migrations files found at: `./api/internal/schema/migrations/`.
+
+**Up**
 
 ```
 -- 000001_create_products_table.up.sql
@@ -139,17 +154,23 @@ CREATE TABLE products (
 );
 ```
 
+**Down**
+
 ```
 -- 000001_create_products_table.down.sql
 
 DROP TABLE IF EXISTS products;
 ```
 
-Make another migration to add tags to products:
+#### Create your second migration
+
+Make another migration to add tags to products.
 
 ```
 make migration add_tags_to_products
 ```
+
+**Up**
 
 ```
 -- 000002_add_tags_to_products.up.sql
@@ -157,6 +178,8 @@ make migration add_tags_to_products
 ALTER TABLE products
 ADD COLUMN tags varchar(255);
 ```
+
+**Down**
 
 ```
 -- 000002_add_tags_to_products.down.sql
@@ -168,10 +191,10 @@ DROP Column tags;
 Migrate up to the latest migration
 
 ```
-make up # you can migrate down with "make down"
+make up
 ```
 
-Display which version you have selected:
+Display which version you have selected. Expect it two print `2` since you created 2 migrations.
 
 ```
 make version
@@ -179,13 +202,15 @@ make version
 
 [Learn more about my go-migrate postgres helper](https://github.com/ivorscott/go-migrate-postgres-helper)
 
-Next we need to seed the database:
+#### Seeding the database
+
+Create a seed file of the appropriate name matching the table name you wish to seed.
 
 ```
 make seed products
 ```
 
-This adds an empty products.sql seed file found under ./api/internal/schema/seeds. Add some rows:
+This adds an empty products.sql seed file found under `./api/internal/schema/seeds`. Add the following sql content:
 
 ```
 -- ./api/internal/schema/seeds/products.sql
@@ -197,28 +222,45 @@ INSERT INTO products (id, name, price, description, created) VALUES
 ON CONFLICT DO NOTHING;
 ```
 
-Appending "ON CONFLICT DO NOTHING;" to the end of the sql command prevents conflicts if the seed file is executed to the database more than once. Note: This behavior works because the products table has at least one table column with a unique constraint.
+Appending "ON CONFLICT DO NOTHING;" to the end of the sql command prevents conflicts if the seed file is inserted more than once to the database. This functionality depends on at least one table column having a unique constraint. In our case `id` is unique.
 
-Finally, add the products seed file to the database
+Finally, add the products seed to the database.
 
 ```
 make insert products
 ```
 
-Enter the database and examine its state
+Enter the database and examine its state if you'd like.
 
 ```
 make debug-db
 ```
 
-### Step 5) In a terminal, and under the project root, execute the commands:
+If the database gets deleted, you don't need to execute every command again. Simply run:
 
 ```
-make api # develop the api with live reloading
-make client # develop the client app in a separate terminal
+make db
+make up
+make insert products
 ```
 
-Navigate to <https://localhost:4000/v1/products> and <https://localhost:3000> in two separate tabs.
+### Step 5) Run the api and client containers
+
+#### Run Go API container with live reload enabled
+
+```
+make api
+```
+
+#### Run the React TypeScript app container
+
+```
+make client
+```
+
+First, navigate to the API in the browser at: <https://localhost:4000/v1/products>.
+
+Then to the client app at: <https://localhost:3000> in a separate tab.
 
 This approach to development uses containers entirely.
 
@@ -228,9 +270,9 @@ To replicate the production environment as much as possible locally, we use self
 
 In your browser, you may see a warning and need to click a link to proceed to the requested page. This is common when using self-signed certificates.
 
-### Step 6) Idiomatic Go development (container free go api)
+### Step 6) Idiomatic Go development (container free Go API)
 
-Another option is to only containerize the client and database. This approach allows you to work with the go api in an idiomatic fashion, with command line flags to configure the api and without live reloading on code changes.
+Another option is to only containerize the client and database. This approach allows you to work with the Go API in an idiomatic fashion, with command line flags to configure the API and without live reloading on code changes.
 
 ```
 export API_DB_DISABLE_TLS=true
@@ -244,12 +286,15 @@ go run ./cmd/api
 Try it in Postman
 
 **List products**
+
 GET <https://localhost:4000/v1/products>
 
 **Retrieve one product**
-GET <https://localhost:4000/v1/products/cbef5139-323f-48b8-b911-dc9be7d0bc07>
+
+GET <https://localhost:4000/v1/products/:id>
 
 **Create a product**
+
 POST <https://localhost:4000/v1/products>
 
 ```
@@ -262,18 +307,18 @@ POST <https://localhost:4000/v1/products>
 ```
 
 **Update a product**
-PUT <https://localhost:4000/v1/products/faa25b57-7031-4b37-8a89-de013418deb0>
 
+PUT <https://localhost:4000/v1/products/:id>
+
+```
 {
-
-```
-"name": "Nintendo Rich!"
-```
-
+	"name": "Nintendo Rich!"
 }
+```
 
 **Delete a product**
-POST <https://localhost:4000/v1/products/faa25b57-7031-4b37-8a89-de013418deb0>
+
+DELETE <https://localhost:4000/v1/products/:id>
 
 **Debugging With Delve**
 
@@ -285,7 +330,7 @@ make debug-api
 
 If required, you may refer back to the [previous tutorial on delve debugging](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#delve-debugging-a-go-api).
 
-# Setup Changes From Part 1
+# Initial Changes From Part 1
 
 ## Improvements
 
@@ -334,13 +379,13 @@ The following code demonstrates how we can conditionally switch between self-sig
 
 ### Change 2) Cleaner terminal logging
 
-Using self-signed certificates produces ugly logs. 
+Using self-signed certificates produces ugly logs.
 
 ![ugly self signed cert logs](/media/ugly-self-signed-cert-logs.png "Ugly self signed certificate logs")
 
-We can avoid the `tls: unknown certificate` message by disabling server error logging. It's ok to do this in development. The things we do care about can still be logged from logging middleware and error handling. 
+We can avoid the `tls: unknown certificate` message by disabling server error logging. It's ok to do this in development. The things we do care about can still be logged from logging middleware and error handling.
 
-When  `cfg.Web.Production` is not true, we create a new error logger that discards the server logs: `errorLog = log.New(ioutil.Discard, "", 0)`
+When `cfg.Web.Production` is not true, we create a new error logger that discards the server logs: `errorLog = log.New(ioutil.Discard, "", 0)`
 
 ```go
 // main.go
@@ -377,7 +422,7 @@ command: CompileDaemon --build="go build -o main ./cmd/api" -log-prefix=false --
 
 ### Change 3) Added the Ardan Labs configuration package
 
-As stated in the intro, this post is heavily influenced by my Ardan Labs training. I highly recommend their [courses](https://education.ardanlabs.com/) and [online meetups](https://www.eventbrite.com/e/ardan-labs-live-worldwide-march-30-april-2-2020-tickets-100331129108). 
+As stated in the intro, this post is heavily influenced by my Ardan Labs training. I highly recommend their [courses](https://education.ardanlabs.com/) and [online meetups](https://www.eventbrite.com/e/ardan-labs-live-worldwide-march-30-april-2-2020-tickets-100331129108).
 
 In the previous post we relied on docker secrets which is meant for production. It's also not ideal in development since we cannot opt out of a containerized api. The [Ardan Labs configuration package](https://github.com/ardanlabs/conf) provides support for using environmental variables and command line arguments for configuration. I copied and paste the package under: `/api/internal/platform/conf`.
 
@@ -420,7 +465,7 @@ The struct field `cfg.Web.Production` for example, can be represented as `--web-
 	}
 ```
 
-As seen above, the package involves creating a nested struct and detailing the configuration vars with their associated type and a default value. After the nested struct, we use the configuration package to parse the arguments which are either cli flags or environment variables with:  `conf.Parse(os.Args[1:], "API", &cfg)`. If there's an error we either reveal usage instructions or throw a fatal error.
+As seen above, the package involves creating a nested struct and detailing the configuration vars with their associated type and a default value. After the nested struct, we use the configuration package to parse the arguments which are either cli flags or environment variables with: `conf.Parse(os.Args[1:], "API", &cfg)`. If there's an error we either reveal usage instructions or throw a fatal error.
 
 The next snippet shows the same vars referenced in our compose file with the `API` namespace:
 
@@ -448,8 +493,7 @@ services:
 
 ### Change 4) Removed Docker Secrets from Development
 
-Docker Secrets are still supported, but not in development. In development, we use an .env file. When a docker-compose file is neighboring an .env file in the same directory we can reference the environment variables with a dollar sign prefixed before the name, for example: `$API_PORT` or `$CLIENT_PORT`. 
-
+Docker Secrets are still supported, but not in development. In development, we use an .env file. When a docker-compose file is neighboring an .env file in the same directory we can reference the environment variables with a dollar sign prefixed before the name, for example: `$API_PORT` or `$CLIENT_PORT`.
 
 Docker secrets are a Swarm specific construct. They aren't really secret in docker-compose anyway [PR #4368](https://github.com/docker/compose/pull/4368). This only works because docker-compose isn't complaining when it sees them. Our secrets setup will come in handy in production (also discussed later in part 3, _"Docker Swarm and Traefik"_).
 
@@ -498,56 +542,74 @@ My reasons for using Docker:
 
 # Graceful Shutdown
 
-What\
-Why\
-How
+Description
+
+Importance
+
+How it works
 
 # Seeding & Migrations
 
-What\
-Why\
-How
+Description
+
+Importance
+
+How it works
 
 # Package Oriented Design
 
-What\
-Why\
-How
+Description
+
+Importance
+
+How it works
 
 # Fluent SQL Generation
 
-What\
-Why\
-How
+Description
+
+Importance
+
+How it works
 
 # Error Handling
 
-What\
-Why\
-How
+Description
+
+Importance
+
+How it works
 
 # Cancellation
 
-What\
-Why\
-How
+Description
+
+Importance
+
+How it works
 
 # Request Validation
 
-What\
-Why\
-How
+Description
+
+Importance
+
+How it works
 
 # Request Logging
 
-What\
-Why\
-How
+Description
 
-# Testcontainers-go
+Importance
 
-What\
-Why\
-How
+How it works
+
+# Integration Testing
+
+Description
+
+Importance
+
+How it works
 
 # Conclusion
