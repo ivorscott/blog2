@@ -17,6 +17,8 @@ category: Development
 tags:
   - Docker Golang React Makefile Postgres Testing Migrations Seeding
 ---
+![](/media/part2.jpeg)
+
 # Building A Better API
 
 # Introduction
