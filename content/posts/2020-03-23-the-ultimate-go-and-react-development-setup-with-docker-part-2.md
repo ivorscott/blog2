@@ -8,7 +8,7 @@ description: >-
   The first post is this series covered "Building A Workflow". Which introduced
   how Docker and Makefiles could collaborate to make a development workflow.
   This post covers “Building A Better API”.  First we discuss some improvements
-  to part 1. Then walk through a demonstration. Ending with a quick overview of
+  to Part 1. Then walk through a demonstration. Ending with a quick overview of
   the API improvements seen in the demo. The API supports: graceful shutdown,
   seeding and migrations, package oriented design, SQL generation. As well as
   error handling, cancellation, request validation, request logging, and
@@ -21,7 +21,7 @@ tags:
 
 # Introduction
 
-The [first post](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker) is this series covered "Building A Workflow". Which introduced how Docker and Makefiles could collaborate to make a development workflow. This post covers “Building A Better API”.  First we discuss some improvements to part 1. Then walk through a demonstration. Ending with a quick overview of the API improvements in the demo. Many improvements originate from [Ardan labs service training](https://github.com/ardanlabs/service-training).
+The [first post](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker) is this series covered "Building A Workflow". Which introduced how Docker and Makefiles could collaborate to make a development workflow. This post covers “Building A Better API”.  First we discuss some improvements to Part 1. Then walk through a demonstration. Ending with a quick overview of the API improvements in the demo. Many improvements originate from [Ardan labs service training](https://github.com/ardanlabs/service-training).
 
 I plan on writing 3 more posts in this series.
 
@@ -49,6 +49,7 @@ We focus on:
 ## Requirements
 
 * [VSCode](https://code.visualstudio.com/)
+* [Postman](https://www.postman.com/downloads/)
 * [Docker](https://www.docker.com/products/docker-desktop)
 
 # Getting Started
@@ -106,7 +107,7 @@ cert:
 	@mv *.pem ./api/tls
 ```
 
-The following demonstrates how we can switch between self-signed certificates and Traefik. When `cfg.Web.Production` is true, we are using Traefik. In part 3 (_"Docker Swarm and Traefik"_), we will have a separate compose file for production.
+The following demonstrates how we can switch between self-signed certificates and Traefik. When `cfg.Web.Production` is true, we are using Traefik. In Part 3 (_"Docker Swarm and Traefik"_), we will have a separate compose file for production.
 
 ```go
 // main.go
@@ -167,7 +168,7 @@ command: CompileDaemon --build="go build -o main ./cmd/api" -log-prefix=false --
 
 ## 3) Added the Ardan Labs configuration package
 
-In part 1, API configuration came from environment variables in the docker-compose file. But the were dependent on docker secret values, making it harder to opt out of docker in development. Reserve docker secrets for production and adopt the [Ardan Labs configuration package](https://github.com/ardanlabs/conf). The package supports both environment variables and command line arguments. Now we can out out of docker if we want a more idiomatic Go API development workflow. I copied and paste the package under: `/api/internal/platform/conf`.
+In Part 1, API configuration came from environment variables in the docker-compose file. But the were dependent on docker secret values, making it harder to opt out of docker in development. Reserve docker secrets for production and adopt the [Ardan Labs configuration package](https://github.com/ardanlabs/conf). The package supports both environment variables and command line arguments. Now we can out out of docker if we want a more idiomatic Go API development workflow. I copied and paste the package under: `/api/internal/platform/conf`.
 
 The struct field cfg.Web.Production can in cli form would be `--web-production`. In environment variable form it is  `API_WEB_PRODUCTION`. Notice, as an environment variable there's an extra namespace. This ensures we only parse the vars we expect. This also reduces name conflicts. In our case that namespace is `API`.
 
@@ -259,7 +260,7 @@ Docker secrets are a Swarm specific construct. They aren't secret in docker-comp
 	}
 ```
 
-More on Docker secrets when we get to production (discussed in part 3, _"Docker Swarm and Traefik"_).
+More on Docker secrets when we get to production (discussed in Part 3, _"Docker Swarm and Traefik"_).
 
 ## 5) Removed PgAdmin4
 
@@ -267,7 +268,7 @@ PgAdmin4 is one of many Postgres editors available. For example, I've enjoyed us
 
 ## 6) Enabled Idiomatic Go development
 
-Containerizing the Go API is now optional. This makes our development workflow even more flexible. This tweet made me consider the consequences of having the API too coupled to Docker.
+Containerizing the Go API is now optional. This makes our development workflow even more flexible. This tweet made me consider the consequences of having the API too coupled to Docker:
 
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Folks, keep docker out of your edit/compile/test inner loop.</p>&mdash; Dave Cheney (@davecheney) <a href="https://twitter.com/davecheney/status/1232078682287591425?ref_src=twsrc%5Etfw">February 24, 2020</a></blockquote>
 
@@ -287,7 +288,7 @@ The workflow changed to support seeding and migrations. In Part 1, the database 
 
 Our goal is going from an empty database to a seeded one. First, we will create a database container in the background. Then make a couple migrations, and seed the database before running more containers.
 
-## Step 1) Rename .env.sample to .env
+## Step 1) Copy .env.sample and rename it to .env
 
 The contents of `.env` should look like this:
 
@@ -405,7 +406,7 @@ Display which version you have selected. Expect it two print `2` since you creat
 make version
 ```
 
-[Learn more from my go-migrate Postgres tutorial repo](https://github.com/ivorscott/go-migrate-postgres-helper)
+[Learn more about my go-migrate Postgres helper](https://github.com/ivorscott/go-migrate-postgres-helper)
 
 #### Seeding the database
 
@@ -422,7 +423,7 @@ This adds an empty products.sql seed file found under `./api/internal/schema/see
 
 INSERT INTO products (id, name, price, description, created) VALUES
 ('cbef5139-323f-48b8-b911-dc9be7d0bc07','Xbox One X', 499.00, 'Eighth-generation home video game console developed by Microsoft.','2019-01-01 00:00:01.000001+00'),
-('ce93a886-3a0e-456b-b7f5-8652d2de1e8f','Playsation 4', 299.00, 'Eighth-generation home video game console developed by Sony Interactive Entertainment.','2019-01-01 00:00:01.000001+00'),
+('ce93a886-3a0e-456b-b7f5-8652d2de1e8f','Playstation 4', 299.00, 'Eighth-generation home video game console developed by Sony Interactive Entertainment.','2019-01-01 00:00:01.000001+00'),
 ('faa25b57-7031-4b37-8a89-de013418deb0','Nintendo Switch', 299.00, 'Hybrid console that can be used as a stationary and portable device developed by Nintendo.','2019-01-01 00:00:01.000001+00')
 ON CONFLICT DO NOTHING;
 ```
@@ -435,11 +436,13 @@ Finally, add the products seed to the database.
 make insert products
 ```
 
-Enter the database and examine its state if you'd like.
+Enter the database and examine its state.
 
 ```
 make debug-db
 ```
+
+![debug db](/media/debug-db.png "debug db")
 
 If the database gets deleted, you don't need to repeat every instruction. Simply run:
 
@@ -449,9 +452,9 @@ make up
 make insert products
 ```
 
-## Step 5) Run the api and client containers
+## Step 5) Run the API and client containers
 
-#### Run Go API container with live reload enabled
+#### Run the Go API container with live reload enabled
 
 ```
 make api
@@ -463,9 +466,11 @@ make api
 make client
 ```
 
+![run containers](/media/run.png "run containers")
+
 First, navigate to the API in the browser at: <https://localhost:4000/v1/products>.
 
-Then to the client app at: <https://localhost:3000> in a separate tab.
+Then navigate to the client app at: <https://localhost:3000> in a separate tab.
 
 This approach to development uses containers entirely.
 
@@ -492,9 +497,7 @@ go run ./cmd/api
 
 GET <https://localhost:4000/v1/products>
 
-**Retrieve one product**
-
-GET <https://localhost:4000/v1/products/:id>
+![list all](/media/screen-shot-2020-04-03-at-04.24.32.png "list all products")
 
 **Create a product**
 
@@ -509,19 +512,31 @@ POST <https://localhost:4000/v1/products>
 }
 ```
 
+![create one](/media/create-one.png "create one product")
+
 **Update a product**
 
 PUT <https://localhost:4000/v1/products/:id>
 
 ```
 {
-	"name": "Nintendo Rich!"
+	"price": "100"
 }
 ```
+
+![update one](/media/update-one.png "update one product")
+
+**Retrieve one product**
+
+GET <https://localhost:4000/v1/products/:id>
+
+![get one](/media/get-one.png "get one product")
 
 **Delete a product**
 
 DELETE <https://localhost:4000/v1/products/:id>
+
+![delete one](/media/screen-shot-2020-04-03-at-04.23.12.png "delete one product")
 
 # Graceful Shutdown
 
