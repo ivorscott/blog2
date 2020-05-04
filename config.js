@@ -22,7 +22,7 @@ module.exports = {
   ],
   author: {
     name: "Ivor Scott",
-    photo: "/photo.png",
+    photo: "/photo.jpg",
     bio: "Design, develop, and deploy.\n",
     contacts: {
       email: "ivor@devpie.io",

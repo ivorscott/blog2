@@ -1,15 +1,15 @@
 ---
 template: post
-title: The Ultimate Go and React Development Setup with Docker
+title: The Ultimate Go and React Development Setup with Docker (Part 1)
 slug: ultimate-go-react-development-setup-with-docker
 draft: false
 date: 2020-01-08T12:54:37.547Z
 description: >-
-  Lately, I've been migrating from Node to Golang. Using Node, I had a great
-  fullstack development workflow, but I struggled to achieve one in Go. What I
-  wanted was the ability to live reload a Go API and debug it with breakpoints
-  while in a container. In this tutorial we'll setup the ultimate Go and React
-  development setup with Docker.
+  Lately, I've been migrating from Node
+  to Golang. Using Node, I had a great fullstack development workflow, but I 
+  struggled to achieve one in Go. What I wanted was the ability to live reload 
+  a Go API and debug it with breakpoints while in a container. In this tutorial
+  we'll setup the ultimate Go and React development setup with Docker. This post covers “Building A Workflow”.
 category: development
 tags:
   - Delve Docker Golang Makefile Postgres Traefik VSCode
@@ -21,6 +21,8 @@ socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 _Updated: January 29th, 2020_
 
 # Introduction
+
+This post covers “Building A Workflow”.
 
 Lately, I've been migrating from Node to Golang. Using Node, I had a great fullstack development workflow, but I struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and debug it with breakpoints while in a container. In this tutorial we'll setup the ultimate Go and React development setup with Docker.
 
@@ -49,7 +51,7 @@ We focus on:
 
 Clone [the project repo](https://github.com/ivorscott/go-delve-reload) and checkout the `starter` branch.
 
-```
+```bash
 git clone https://github.com/ivorscott/go-delve-reload
 cd go-delve-reload
 git checkout starter
@@ -57,10 +59,10 @@ git checkout starter
 
 The project starter is a simple mono repo containing two folders.
 
-```
+```md
 ├── README.md
-├── api
-├── client
+├── api/
+├── client/
 ```
 
 # Docker Basics
@@ -124,7 +126,7 @@ VSCode will need to attach to the delve debugger inside the go container.
 
 Create a hidden folder named `.vscode` and add `launch.json` to it.
 
-```
+```bash
 mkdir .vscode
 touch .vscode/launch.json
 ```
@@ -156,13 +158,13 @@ Add the following contents to `launch.json`.
 
 Add a new `Dockerfile` to the api folder and open it.
 
-```
+```bash
 touch api/Dockerfile
 ```
 
 Add the following:
 
-```
+```Dockerfile
 # 1. FROM sets the base image to use for subsequent instructions
 # Use the golang alpine image as the base stage of a multi-stage routine
 FROM golang:1.14-alpine as base
@@ -255,7 +257,7 @@ CMD ["./main"]
 
 In the root directory run the following to build the api development image:
 
-```
+```bash
 DOCKER_BUILDKIT=1 docker build --target dev --tag demo/api ./api
 ```
 
@@ -277,13 +279,13 @@ Our Dockerfiles leverage Aqua Security's [trivy](https://github.com/aquasecurity
 
 Add a new `Dockerfile` to the client folder and open it.
 
-```
+```bash
 touch client/Dockerfile
 ```
 
 Add the following contents:
 
-```
+```Dockerfile
 # 1. Use the node apline image as the base stage of a multi-stage routine
 FROM node:13.7.0-alpine as base
 
@@ -374,7 +376,7 @@ HEALTHCHECK CMD [ "wget", "-q", "0.0.0.0:80" ]
 
 In the root directory run the following to build the client development image:
 
-```
+```Dockerfile
 DOCKER_BUILDKIT=1 docker build --target dev --tag demo/client ./client
 ```
 
@@ -395,13 +397,13 @@ With docker-compose we can run a collection of containers with one command. It m
 
 In the project root, create a `docker-compose.yml` file and open it.
 
-```
+```bash
 touch docker-compose.yml
 ```
 
 Add the following:
 
-```
+```yaml
 version: "3.7"
 services:
   traefik:
@@ -579,17 +581,17 @@ secrets:
 
 Create a `secrets` folder in the project root.
 
-```
+```bash
 mkdir secrets
 ```
 
 Add the following secret files.
 
-```
+```md
 └── secrets
-   ├── postgres_db
-   ├── postgres_passwd
-   └── postgres_user
+├── postgres_db
+├── postgres_passwd
+└── postgres_user
 ```
 
 ```
@@ -600,7 +602,7 @@ In each file add some secret value.
 
 The following code in our docker-compose.yml file tells docker-compose that the volume, and networks will be created beforehand (or externally).
 
-```
+```yaml
 volumes:
   postgres-db:
     external: true
@@ -614,30 +616,30 @@ networks:
 
 So we need to create them upfront. Run the following commands to do so.
 
-```
+```bash
 docker network create postgres-net
 docker network create traefik-public
 ```
 
-```
+```bash
 docker volume create postgres-db
 ```
 
 Navigate to your host machine's `/etc/hosts` file and open it.
 
-```
+```bash
 sudo vim /etc/hosts
 ```
 
 Add an additional line containing the following domains.
 
-```
-127.0.0.1       client.local api.local debug.api.local traefik.api.local pgadmin.local
+```md
+127.0.0.1 client.local api.local debug.api.local traefik.api.local pgadmin.local
 ```
 
 ### Demo
 
-```
+```bash
 docker-compose up
 ```
 
@@ -657,7 +659,7 @@ You should see the products being shown in the react app, meaning the `traefik`,
 
 Run `docker-compose down` to stop and remove all the containers we created with the `docker-compose up` command. In addition to that also remove the external volume and networks we created. In the _Using Makefiles_ section, the makefile will create these for us.
 
-```
+```bash
 docker-compose down
 docker network remove postgres-net
 docker network remove traefik-public
@@ -680,36 +682,36 @@ Traefik's documentation states:
 
 Revisit the `traefik` service in our compose file.
 
-```
- traefik:
-    image: traefik:v2.1.2
-    command:
-      - "--api.insecure=true" # Not For Production
-      - "--api.debug=true"
-      - "--log.level=DEBUG"
-      - "--providers.docker"
-      - "--providers.docker.exposedbydefault=false"
-      - "--providers.docker.network=traefik-public"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-    ports:
-      - 80:80
-      - 443:443
-      - 8080:8080
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+```yaml
+traefik:
+  image: traefik:v2.1.2
+  command:
+    - "--api.insecure=true" # Not For Production
+    - "--api.debug=true"
+    - "--log.level=DEBUG"
+    - "--providers.docker"
+    - "--providers.docker.exposedbydefault=false"
+    - "--providers.docker.network=traefik-public"
+    - "--entrypoints.web.address=:80"
+    - "--entrypoints.websecure.address=:443"
+  ports:
+    - 80:80
+    - 443:443
+    - 8080:8080
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock:ro
 
-    networks:
-      - traefik-public
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.api.local`)"
-      - "traefik.http.routers.traefik.service=api@internal"
-      - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
-      - "traefik.http.routers.http-catchall.entrypoints=web"
-      - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+  networks:
+    - traefik-public
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.traefik.tls=true"
+    - "traefik.http.routers.traefik.rule=Host(`traefik.api.local`)"
+    - "traefik.http.routers.traefik.service=api@internal"
+    - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
+    - "traefik.http.routers.http-catchall.entrypoints=web"
+    - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
+    - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 ```
 
 We leverage the official Traefik image from DockerHub, version 2.1.2. We can configure Traefik using command line flags and labels.
@@ -724,49 +726,49 @@ I prefer using CLI flags because I don't want to worry about storing the TOML fi
 
 Let's start with the command line flags.
 
-```
+```md
 --api.insecure=true
 ```
 
 The API is exposed on the traefik entry point (port 8080).
 
-```
+```md
 --api.debug=true
 ```
 
 Enable additional endpoints for debugging and profiling.
 
-```
+```md
 --log.level=DEBUG
 ```
 
 Set the log level to DEBUG. By default, the log level is set to ERROR. Alternative logging levels are DEBUG, PANIC, FATAL, WARN, and INFO.
 
-```
+```md
 --providers.docker
 ```
 
 There are various providers to chose from, this line explicitly selects docker.
 
-```
+```md
 --providers.docker.exposedbydefault=false
 ```
 
 Restrict Traefik's routing configuration from exposing all containers by default. Only containers with `traefik.enable=true` label will be exposed.
 
-```
+```md
 --providers.docker.network=traefik-public
 ```
 
 Defines a default network to use for connections to all containers.
 
-```
+```md
 --entrypoints.web.address=:80
 ```
 
 Create an entrypoint named web on port 80 to handle http connections.
 
-```
+```md
 --entrypoints.websecure.address=:443
 ```
 
@@ -774,25 +776,25 @@ Create an entrypoint named websecure on port 443 to handle https connections.
 
 Next we will cover the labels on the traefik service.
 
-```
+```md
 - "traefik.enable=true"
 ```
 
 Tell Traefik to include the service in its routing configuration.
 
-```
+```md
 - "traefik.http.routers.traefik.tls=true"
 ```
 
 Enable TLS certificates.
 
-```
+```md
 - "traefik.http.routers.traefik.rule=Host(`traefik.api.local`)"
 ```
 
 Set a host matching rule to redirect all traffic matching this request to the container.
 
-```
+```md
 - "traefik.http.routers.traefik.service=api@internal"
 ```
 
@@ -802,7 +804,7 @@ If you enable the API, a new special service named api@internal is created and c
 
 The next group of labels creates a router named http-catchall that will catch all HTTP requests and forwards it to a router called redirect-to-https. This has the added benefit of redirecting our traffic to https.
 
-```
+```md
 - "traefik.http.routers.http-catchall.rule=hostregexp(`{host:.+}`)"
 - "traefik.http.routers.http-catchall.entrypoints=web"
 - "traefik.http.routers.http-catchall.middlewares=redirect-to-https@docker"
@@ -811,59 +813,59 @@ The next group of labels creates a router named http-catchall that will catch al
 
 Now revisit the `client` service.
 
-```
-  client:
-    build:
-      context: ./client
-      target: dev
-    ports:
-      - 3000:3000
-    volumes:
-      - ./client:/client/app
-      - /client/app/node_modules
-    networks:
-      - traefik-public
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.client.tls=true"
-      - "traefik.http.routers.client.rule=Host(`client.local`)"
-      - "traefik.http.routers.client.entrypoints=websecure"
-      - "traefik.http.services.client.loadbalancer.server.port=3000"
+```yaml
+client:
+  build:
+    context: ./client
+    target: dev
+  ports:
+    - 3000:3000
+  volumes:
+    - ./client:/client/app
+    - /client/app/node_modules
+  networks:
+    - traefik-public
+  labels:
+    - "traefik.enable=true"
+    - "traefik.http.routers.client.tls=true"
+    - "traefik.http.routers.client.rule=Host(`client.local`)"
+    - "traefik.http.routers.client.entrypoints=websecure"
+    - "traefik.http.services.client.loadbalancer.server.port=3000"
 ```
 
 ## Line by Line: How It Works
 
-```
+```md
 - "traefik.enable=true"
 ```
 
 Tell Traefik to include the service in its routing configuration.
 
-```
+```md
 - "traefik.http.routers.client.tls=true"
 ```
 
 To update the router configuration automatically attached to the application, we add labels starting with:
 
-```
+```md
 traefik.http.routers.{router-name-of-your-choice}
 ```
 
 followed by the option you want to change. In this case, we enable tls encryption.
 
-```
+```md
 - "traefik.http.routers.client.rule=Host(`client.local`)"
 ```
 
 Set a host matching rule to redirect all traffic matching this request to the container.
 
-```
+```md
 - "traefik.http.routers.client.entrypoints=websecure"
 ```
 
 Configure Traefik to expose the container on the websecure entrypoint.
 
-```
+```md
 - "traefik.http.services.client.loadbalancer.server.port=3000"
 ```
 
@@ -877,10 +879,10 @@ It can be a hassle to type various docker commands. [GNU Make](https://www.gnu.o
 
 Here's an example makefile:
 
-```
+```md
 #!make
 hello: hello.c
-  gcc hello.c -o hello
+gcc hello.c -o hello
 ```
 
 The main feature we care about is:
@@ -892,7 +894,7 @@ The main feature we care about is:
 \
 The syntax is:
 
-```
+```md
 target: prerequisite prerequisite prerequisite ...
 (TAB) commands
 ```
@@ -905,13 +907,13 @@ In the command line, we would run this example makefile by typing `make` or `mak
 
 Create a `makefile` in your project root and open it.
 
-```
+```md
 touch makefile
 ```
 
 Add the following contents:
 
-```
+```makefile
 #!make
 
 NETWORKS="$(shell docker network ls)"
@@ -1007,7 +1009,7 @@ dump:
 
 ### Demo
 
-```
+```bash
 make
 ```
 
@@ -1019,7 +1021,7 @@ Our makefile creates an external database volume and 2 networks when we run `mak
 
 This is done with the following code:
 
-```
+```bash
 ifeq (,$(findstring postgres-net,$(NETWORKS)))
 	# do something
 endif
@@ -1031,7 +1033,7 @@ If we find the `postgres-net` network in the `$(NETWORKS)` variable we do nothin
 
 Variables can be defined at the top of a Makefile and referenced later.
 
-```
+```makefile
 #!make
 NETWORKS="$(shell docker network ls)"
 ```
@@ -1042,7 +1044,7 @@ Using the syntax `$(shell <command>)` is one way to execute a command and store 
 
 Environment variables from a .env file can be referenced as long as you include it at the top of the makefile.
 
-```
+```makefile
 #!make
 include .env
 
@@ -1068,17 +1070,17 @@ We still haven't discussed how to interact with Postgres. Eventually you're goin
 
 ### Demo
 
-```
+```bash
 make debug-db
 ```
 
 You should be automatically logged in. Run a couple commands to get a feel for it.
 
-```
+```md
 \dt
 ```
 
-```
+```sql
 select name, price from products
 ```
 
@@ -1118,7 +1120,7 @@ To view a database table, you must first cascade the nested tree structure to fi
 
 Making database backups of your Postgres database is straight forward.
 
-```
+```makefile
 dump:
 	@echo [ dumping postgres backup for $(POSTGRES_DB)... ]
 	@docker exec -it db pg_dump --username $(POSTGRES_USER) $(POSTGRES_DB) > ./api/scripts/backup.sql
@@ -1127,7 +1129,7 @@ dump:
 
 ### Demo
 
-```
+```bash
 make dump
 ```
 
@@ -1143,7 +1145,7 @@ The official Postgres image states:
 
 The database creation script located under `api/scripts/create-db.sh` is used to seed the database.
 
-```
+```bash
 #!/bin/bash
 set -e
 
@@ -1169,10 +1171,10 @@ fi
 
 In our docker-compose.yml file, `create-db.sh` is bind mounted into the db container:
 
-```
-    volumes:
-      - postgres:/var/lib/postgresql/data
-      - ./api/scripts/:/docker-entrypoint-initdb.d/
+```yaml
+volumes:
+  - postgres:/var/lib/postgresql/data
+  - ./api/scripts/:/docker-entrypoint-initdb.d/
 ```
 
 `create-db.sh` only runs if a backup doesn't exist. That way, if you make a backup, (which is automatically placed in the `api/scripts` directory), and you remove the database volume, then restart the database container, the next time around, `create-db.sh` will be ignored and only the backup will be used.
@@ -1181,7 +1183,7 @@ In our docker-compose.yml file, `create-db.sh` is bind mounted into the db conta
 
 Our go api is already reloadable thanks to this line in our docker-compose.yml file.
 
-```
+```md
 CompileDaemon --build="go build -o main ./cmd/api" --command=./main
 ```
 
@@ -1199,7 +1201,7 @@ To see this in action make sure your api is running. Then make a change to any a
 
 [Delve](https://github.com/go-delve/delve) has become the de facto standard debugger for the Go programming language. To use it with VSCode, we needed to add a launch script so that VSCode could attach to the debugger in the go container. With delve installed, the following line is how we actually execute it at the container level.
 
-```
+```bash
 dlv debug --accept-multiclient --continue --headless --listen=:2345 --api-version=2 --log ./cmd/api/
 ```
 
@@ -1219,7 +1221,7 @@ We use `dlv debug` to compile and begin debugging the main package located in th
 
 ### Demo
 
-```
+```bash
 make debug-api
 ```
 
@@ -1233,7 +1235,7 @@ Our development setup wouldn't be complete without testing. Here we will run two
 
 ### Demo
 
-```
+```bash
 make test-client
 make test-api
 ```
@@ -1244,11 +1246,11 @@ make test-api
 
 In your CI build system you can simply build the test stage of your docker images to run unit tests.
 
-```
+```bash
 docker build --target test --tag demo/client:test ./client
 ```
 
-```
+```bash
 docker build --target test --tag demo/api:test ./api
 ```
 
