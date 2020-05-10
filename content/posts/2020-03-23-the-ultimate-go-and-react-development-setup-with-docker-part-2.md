@@ -16,7 +16,7 @@ socialImage: "/media/part2.jpeg"
 
 # Introduction
 
-[Part 1](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker) of this series covered "Building A Workflow", where I demonstrated how to streamline a development workflow using Docker, docker-compose and Makefiles. This post covers “Building An API”. I'll share the challenges I faced building a production ready API. Then we'll get to see some code and I'll walk through the API implementation so you can understand enough to build your own. After that, we'll see a demo and discover how our workflow has changed. Feel free to [skip straight to the demo](#demo) if you want.
+[Part 1](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker) demonstrated how to streamline a development workflow using Docker, docker-compose and Makefiles. This post covers “Building An API”. I'll share the challenges I faced building production ready APIs in Go. Then walk through the API implementation so you get a deep understanding of its components. After that, we'll see a demo and discover how the workflow has changed. [Skip straight to the demo](#demo) if you want. This post is quite long.
 
 We focus on:
 
@@ -25,13 +25,13 @@ We focus on:
 - [Package Oriented Design](#package-oriented-design)
 - [Configuration](#configuration)
 - [Docker Secrets](#configuration)
-- [Profiling](#profiling)
 - [Graceful Shutdown](#graceful-shutdown)
-- [Error Handling](#error-handling)
-- [Handling Requests](#requests)
 - [Middleware](#middleware)
+- [Handling Requests](#requests)
+- [Error Handling](#error-handling)
 - [Seeding & Migrations](#seeding--migrations)
 - [Integration Testing](#integration-testing)
+- [Profiling](#profiling)
 - [A Demo](#demo)
 
 ## Requirements
@@ -41,31 +41,23 @@ We focus on:
 
 # Challenges
 
-Migrating from Node to Go is challenging. Beyond language syntax and mechanics, I faced 4 big challenges when it came to production ready services.
+Migrating from Node to Go is challenging. Beyond language syntax and mechanics, I faced 3 big challenges when building production ready services.
 
-1. <div title="general" style="display:inline;background-color: #FFFB78">You need to rethink the way you structure your application.</div> For example, you can't have circular dependencies in Go, the application won't compile if you do.
+1. <div title="general" style="display:inline;background-color: #FFFB78">Rethinking the way you structure your app.</div> For example, you can't have circular dependencies in Go, the application won't compile if you do.
 
-2. <div title="general" style="display:inline;background-color: #FFFB78">You need to relearn concepts and discover how they're implemented in Go.</div> Concepts like, routing, CRUD, interacting with a database, graceful shutdown, seeding and migrations, integration testing etc.
+2. <div title="general" style="display:inline;background-color: #FFFB78">Building your own packages with built-in libraries or full-featured 3rd-parties packages.</div> There are benefits and disadvantages to each.
 
-3. <div title="general" style="display:inline;background-color: #FFFB78">You need to choose between using built-in standard libraries or adopting full-featured tried-and-true packages from 3rd-parties.</div> There are benefits and disadvantages to each.
+3. <div title="general" style="display:inline;background-color: #FFFB78">Using an ORM or going bare metal with SQL.</div> An ORM might get you to your destination faster but there are trade-offs to consider.
 
-4. <div title="general" style="display:inline;background-color: #FFFB78">You need to choose between using a database ORM abstraction layer or going bare metal with SQL.</div> An ORM might get you to your destination faster but there are trade-offs to consider.
-
-If you've developed in other languages and serious about Go, you just want a production ready example up front you can test drive. This doesn't necessarily mean you want an easy ride. You just want a guide. Some starter code you can read, tinker with and determine if you like it or not. If it peaks your interest, you extend it.
-
-I followed many incomplete API tutorials or web app examples that left me frustrated and eager to just find a complete guide to building APIs in Go. Ardan Labs solved my problem. They provide professional training for Go. In fact, the demo API in this post is an extension of their [service example](https://github.com/ardanlabs/service). I simply extended it, adding cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets.
-
-I first heard about Ardan Labs last year and attended a workshop.
+A few basic API tutorials left me eager to find a complete production ready example I could understand and tinker with. Ardan Labs scratched my itch. I heard about them last year and attended a workshop. I received a lot of ideas and it accelerated my path to success. I highly recommend their [workshops](https://www.eventbrite.com/o/ardan-labs-7092394651?utm_source=ardan_website&utm_medium=scrolling_banner&utm_campaign=website_livestream_promo) and [courses](https://education.ardanlabs.com/).
 
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">First day of training has been intense! <a href="https://twitter.com/hashtag/golang?src=hash&amp;ref_src=twsrc%5Etfw">#golang</a> <a href="https://twitter.com/hashtag/ultimategotraining?src=hash&amp;ref_src=twsrc%5Etfw">#ultimategotraining</a> <a href="https://t.co/wdEQ5MrxK0">pic.twitter.com/wdEQ5MrxK0</a></p>&mdash; ivorscott (@ivorsco77) <a href="https://twitter.com/ivorsco77/status/1182291425830019074?ref_src=twsrc%5Etfw">October 10, 2019</a></blockquote>
 
-The training opened the door to a lot of ideas and more importantly it accelerated my path to success. If you want to learn fast and have a budget, I highly recommend their [workshops](https://www.eventbrite.com/o/ardan-labs-7092394651?utm_source=ardan_website&utm_medium=scrolling_banner&utm_campaign=website_livestream_promo) or [courses](https://education.ardanlabs.com/).
-
 # The API
 
-I'm going to talk about the API features I find interesting. If you're new to this kind of stuff (like I was a couple months ago), I hope you'll learn something and feel confident in navigating the [source code](https://github.com/ivorscott/go-delve-reload/tree/part2) on your own. I hope to learn too in sharing my understanding.
+My demo API is actually an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I simply extended it, adding cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. I'm going to talk about the API features I find interesting. I hope you'll learn something and feel confident in navigating the [source code](https://github.com/ivorscott/go-delve-reload/tree/part2) on your own.
 
-![architecture](/media/arch.png)
+![architecture](/media/architechture.png)
 
 ## Package Oriented Design
 
@@ -73,7 +65,9 @@ I'm going to talk about the API features I find interesting. If you're new to th
 
 Package Oriented Design suggests _Application Projects_ should have a `/cmd` and `/internal` folder at the root of the project. The cmd folder houses the main applications for the project if there are more than one, for example, an api, cli etc., and the internal folder contains any code that should be kept internal to the project. The internal folder is necessary because breaking changes may occur when a project's public API surface changes. This idea is described by _Hyrum's law:_
 
-<blockquote title="evidence"><div style="display:inline;background-color: #FFDE70">"With a sufficient number of users of an API, it does not matter what you promise in the contract: all observable behaviors of your system will be depended on by somebody."</div>
+<blockquote title="evidence">
+<div title="general" style="display:inline;background-color: #FFFB78">
+"With a sufficient number of users of an API, it does not matter what you promise in the contract: all observable behaviors of your system will be depended on by somebody."</div>
 
 -- Winters, Titus. Software Engineering at Google. Lessons Learned from Programming Over Time. O'REILLY, 2020. </blockquote>
 
@@ -85,7 +79,9 @@ In Package Oriented Design, the internal packages are split into two types: _bus
 
 ![architecture](/media/internal-platform.png)
 
-Everything else in the internal folder supports the business domain. That's all you need to know for now. To learn more about package oriented design, here's a couple articles about [the strategy](https://www.ardanlabs.com/blog/2017/02/package-oriented-design.html) and [the philosophy behind it](https://www.ardanlabs.com/blog/2017/02/design-philosophy-on-packaging.html). In addition, to the cmd and internal folder, I have added a tls folder to hold certificates and a pkg folder to hold reusable code that might be used in other projects. Some of these project layout ideas are also preserved in a repository called [Standard Go Project Layout](https://github.com/golang-standards/project-layout).
+Everything else in the internal folder supports the business domain. That's all you need to know for now. To learn more about package oriented design, here's a couple articles about [the strategy](https://www.ardanlabs.com/blog/2017/02/package-oriented-design.html) and [the philosophy behind it](https://www.ardanlabs.com/blog/2017/02/design-philosophy-on-packaging.html). In addition, to the cmd and internal folders, also have `tls` and `pkg` folders. The tls folder holds self-signed certificates and pkg contains reusable packages that might be used in other projects. A [repository](https://github.com/golang-standards/project-layout) exists that documents standard Go project layout ideas. In the end, their are no strict guidelines but common patterns you may see across projects. In the next section, I'll discuss configuration.
+
+![architecture](/media/pkg.gif)
 
 ## Configuration
 
@@ -94,11 +90,7 @@ In Part 1, API configuration came from environment variables in the docker-compo
 The package takes struct fields and translates them to cli flags and environment variables. The struct field `cfg.Web.Production` in cli form would be `--web-production`. But in environment variable form it is `API_WEB_PRODUCTION`. Notice as an environment variable there's an extra namespace. This ensures we only parse the vars we expect. This also reduces name conflicts. In our case that namespace is `API`.
 
 ```go
-// main.go
-
-// =========================================================================
-// Configuration
-
+// api/cmd/api/main.go
 var cfg struct {
   Web struct {
     Address            string        `conf:"default:localhost:4000"`
@@ -116,12 +108,12 @@ var cfg struct {
     DisableTLS bool   `conf:"default:true"`
   }
 }
-
 ```
 
 The configuration package requires a nested struct describing the configuration fields. Each field has a type and default value supplied in a struct tag. The _noprint_ value in the struct tag can be used to omit secret data from logging. Next we parse the arguments, as environment variables or command line flags:
 
 ```go
+// api/cmd/api/main.go
 if err := conf.Parse(os.Args[1:], "API", &cfg); err != nil {
   if err == conf.ErrHelpWanted {
     usage, err := conf.Usage("API", &cfg)
@@ -139,7 +131,6 @@ If there's an error we either reveal usage instructions or throw a fatal error. 
 
 ```yaml
 # docker-compose.yml
-
 services:
   api:
     build:
@@ -159,7 +150,28 @@ services:
       - $API_PORT:$API_PORT
 ```
 
-When necessary we may abstract some environment variables into a centralized location and pull them in. When an `.env` file exists in the same directory as the docker-compose file, we can reference its vars. To do this, prefix a dollar sign before the environment variable name. For example: `$API_PORT` or `$CLIENT_PORT`. This allows for better maintenance of configuration defaults, especially when values are referenced in multiple places.
+When necessary we may abstract some environment variables into a centralized location and pull them in. When an `.env` file exists in the same directory as the docker-compose file, we can reference the variables. To do this, prefix a dollar sign before the environment variable name. For example: `$API_PORT` or `$CLIENT_PORT`. This allows for better maintenance of configuration defaults, especially when values are referenced in multiple places.
+
+Both the Makefile and the docker-compose file take advantage of the following `.env` file:
+
+```makefile
+# .env
+
+# ENVIRONMENT VARIABLES
+
+API_PORT=4000
+PPROF_PORT=6060
+CLIENT_PORT=3000
+
+POSTGRES_DB=postgres
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_HOST=db
+POSTGRES_NET=postgres-net
+
+REACT_APP_BACKEND=https://localhost:4000/v1
+API_WEB_FRONTEND_ADDRESS=https://localhost:3000
+```
 
 ## Docker Secrets
 
@@ -169,17 +181,12 @@ When necessary we may abstract some environment variables into a centralized loc
 onMouseOut="this.style.color='#5D93FF'" style="color:#5D93FF">Docker secrets</a> are a Swarm specific construct. That means they aren't secret outside of Swarm. They only work in docker-compose file because docker-compose doesn't complain when it sees them [PR #4368](https://github.com/docker/compose/pull/4368). The Go API only supports Docker secrets when `cfg.Web.Production` is true. So it's already set up for Swarm usage. When this happens we swap out the default database configuration with secrets.
 
 ```go
-// main.go
-
-// =========================================================================
-// Enabled Docker Secrets
-
+// api/cmd/api/main.go
 if cfg.Web.Production {
   dockerSecrets, err := secrets.NewDockerSecrets()
   if err != nil {
     log.Fatalf("error : retrieving docker secrets failed : %v", err)
   }
-
   cfg.DB.Name = dockerSecrets.Get("postgres_db")
   cfg.DB.User = dockerSecrets.Get("postgres_user")
   cfg.DB.Host = dockerSecrets.Get("postgres_host")
@@ -190,69 +197,7 @@ if cfg.Web.Production {
 
 To handle secrets I'm using a slightly modified version of a [secrets package](https://github.com/ijustfool/docker-secrets) I found on the internet. It's located under: `/api/pkg/secrets/secrets.go`
 
-The `NewDockerSecrets` method reads All the secrets located in the secrets directory. By default that's /run/secrets. Then it creates a mapping that can be accessed by the `Get` method. More on Docker secrets when we get to production (discussed in Part 3, _"Docker Swarm and Traefik"_).
-
-## Profiling
-
-<div>
-To measure how our programs are performing we use profiling. <i>The Go Programming langauge</i> by Alan A. A. Donovan and Brian W. Kernighan writes, <div style="display:inline;background-color: #D2F774">"Profiling is an automated approach to performance measurement based on sampling a number of profile events during the execution, then extrapolating from them during a post-processing step; the resulting statistical summary is called a profile".</div> Amazingly, Go supports many kinds of profiling. The standard library supports profiling with a package named <a href="https://golang.org/pkg/net/http/pprof/" target="_blank">pprof</a>. Here's a few predefined profiles pprof provides:</div>
-
-- block: stack traces that led to blocking on synchronization primitives
-- goroutine: stack traces of all goroutines
-- heap: sampling traces of all current goroutines
-- mutex: stack traces of holders of contended mutexes
-- profile: CPU profile
-
-Using pprof to measure an API, involves importing the standard HTTP interface to profiling data.
-
-```go
-import _ "net/http/pprof"
-```
-
-Since we don't use the import directly and just wish to use its side effects we place and \_ in front of the import. The import will register handlers under /debug/pprof/ using the DefaultServeMux. If you are not using the DefaultServeMux you need to register the handlers with the mux your are using. It's worth noting, that these handlers should not be accessible to the public because of this we use the DefaultServerMux on a dedicated port in a separate goroutine to leverage pprof.
-
-```go
-// =========================================================================
-// Enabled Profiler
-
-go func() {
-  log.Printf("main: Debug service listening on %s", cfg.Web.Debug)
-  err := http.ListenAndServe(cfg.Web.Debug, nil)
-  if err != nil {
-    log.Printf("main: Debug service listening on %s", cfg.Web.Debug)
-  }
-}()
-```
-
-In production, we won't expose the registered handlers pprof provides to Traefik. If we navigate to http://localhost:6060/debug/pprof/ we'll see something like this:
-
-![](/media/pprof.png)
-
-Some additional utilities you may want to install are an HTTP load generator like [hey](https://github.com/rakyll/hey). And [graphviz](http://graphviz.gitlab.io/download/) if you want to visualize a profile in a web page.
-
-```bash
-brew install hey graphviz
-```
-
-Then in one terminal you can make 10 concurrent connections to make 2000 requests to the api
-
-```bash
-hey -c 10 -n 2000 https://localhost:4000/v1/products
-```
-
-While in another terminal, we leverage one of the register handlers setup by pprof. In the case, we want to capture a cpu profile for a duration of 10 seconds to measure the server activity.
-
-```bash
-go tool pprof http://localhost:6060/debug/pprof/profile\?seconds\=10
-```
-
-Afterward we can run top or top -cum to analyze the profile captured.
-
-![](/media/profile.png)
-
-Or view a visualization in a webpage.
-
-![](/media/web.png)
+The `NewDockerSecrets` method reads All the secrets located in the secrets directory. By default that's /run/secrets. Then it creates a mapping that can be accessed by the `Get` method. More on Docker secrets when we get to production (discussed in Part 4, _"Docker Swarm and Traefik"_).
 
 ## Graceful Shutdown
 
@@ -263,16 +208,8 @@ With production services you shouldn't immediately shutdown when an error occurs
 First thing to do is handle potential server errors separately from interrupt and termination signals perhaps caused by the operating system or even Docker Engine (when we deploy). When a server error occurs it will do so immediately and in these cases we don't want to gracefully shutdown. If the server can't start then we should shutdown immediately. We capture server errors when the api listens and serves.
 
 ```go
-
-func main() error {
-// ...
-
-// =========================================================================
-// Start API Service
-
-// Make a channel to listen for shutdown signal from the OS.
+// api/cmd/api/main.go
 shutdown := make(chan os.Signal, 1)
-
 api := http.Server{
   Addr:         cfg.Web.Address,
   Handler:      handlers.API(shutdown, repo, infolog, cfg.Web.FrontendAddress),
@@ -280,12 +217,8 @@ api := http.Server{
   WriteTimeout: cfg.Web.WriteTimeout,
   ErrorLog:     discardLog,
 }
-
-// Make a channel to listen for errors coming from the listener. Use a
-// buffered channel so the goroutine can exit if we don't collect this error.
 serverErrors := make(chan error, 1)
 
-// Start the service listening for requests.
 go func() {
   log.Printf("main : API listening on %s", api.Addr)
   if cfg.Web.Production {
@@ -294,8 +227,6 @@ go func() {
     serverErrors <- api.ListenAndServeTLS("./tls/cert.pem", "./tls/key.pem")
   }
 }()
-// ...
-}
 ```
 
 So we need two separate buffered channels: one for server errors and the other for signals of type `os.Signal`, which we plan to gracefully shutdown for.
@@ -314,37 +245,21 @@ signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 Next we use the select block, which looks like a switch statement but it's really only used for channel send and receive operations. The select handles to case one that receives from the serverErrors channel and the other that receives from the shutdown channel.
 
 ```go
-
-func main() error {
-// ...
-
-// Make a channel to listen for an interrupt or terminate signal from the OS.
-// Use a buffered channel because the signal package requires it.
+// api/cmd/api/main.go
 signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-// =========================================================================
-// Shutdown
-
-// Blocking main and waiting for shutdown.
 select {
 case err := <-serverErrors:
   return errors.Wrap(err, "listening and serving")
-
 case sig := <-shutdown:
   log.Println("main : Start shutdown", sig)
-
-  // Give outstanding requests a deadline for completion.
   ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
   defer cancel()
-
-  // Asking listener to shutdown and load shed.
   err := api.Shutdown(ctx)
   if err != nil {
     log.Printf("main : Graceful shutdown did not complete in %v : %v", cfg.Web.ShutdownTimeout, err)
     err = api.Close()
   }
-
-  // Log the status of this shutdown.
   switch {
   case sig == syscall.SIGSTOP:
     return errors.New("integrity issue caused shutdown")
@@ -352,46 +267,108 @@ case sig := <-shutdown:
     return errors.Wrap(err, "could not stop server gracefully")
   }
 }
-
-return nil
-}
 ```
 
-## Error Handling
+## Middleware
 
-errors get bubbled up to the main.go file. The run function is the only place in the application that can throw a fatal error.
+A middleware is a function that intercepts the request and response provided by an HTTP server in order to execute logic and then it either ends the response early in the event of integrity error or it calls the next middleware. The demo uses a custom implementation of middleware instead of leveraging 3rd party packages like [Alice](https://github.com/justinas/alice) or [negroni](https://github.com/urfave/negroni).
 
-We are ready discussed the need to graceful shutdown which occurs which may occur due to signals outside the application. But what happens if the application it self wishes to shutdown it also need a mechanism to signal a shutdown.
+When a request comes in it travels through a set of middleware layers before reaching the handler and then back out again.
+
+![](/media/middleware.png)
+
+Middleware functions are passed down to the custom web framework located in the `api/cmd/api/internal/routes.go`.
 
 ```go
-// shutdown is a type used to help with the graceful termination of the service.
-type shutdown struct {
-  Message string
-}
+// api/cmd/api/internal/routes.go
+app := web.NewApp(shutdown, log, mid.Logger(log), mid.Errors(log), mid.Panics(log))
+```
 
-// Error is the implementation of the error interface.
-func (s *shutdown) Error() string {
-  return s.Message
-}
+The api/internal/mid package contains all the middleware for the service. In a future post I will additional middleware for auth and metrics.
 
-// NewShutdownError returns an error that causes the framework to signal
-// a graceful shutdown.
-func NewShutdownError(message string) error {
-  return &shutdown{message}
-}
+The web package will take each handler and wrap it in the middleware set. It does this by leveraging `web.wrapMiddleware(mw []Middleware, handler Handler)`, which takes a slice of middleware and a handler as arguments.
 
-// IsShutdown checks to see if the shutdown error is contained
-// in the specified error value.
-func IsShutdown(err error) bool {
-  if _, ok := errors.Cause(err).(*shutdown); ok {
-    return true
+```go
+// api/internal/platform/web/middleware.go
+type Middleware func(Handler) Handler
+
+func wrapMiddleware(mw []Middleware, handler Handler) Handler {
+  for i := len(mw) - 1; i >= 0; i-- {
+    h := mw[i]
+    if h != nil {
+      handler = h(handler)
+    }
   }
-  return false
+  return handler
 }
 ```
 
+To stick to the correct order, the code loops backwards invoking each middleware in the variadic set and then creates a new wrapped handler.
+
+[explain]
+
 ```go
-// App is the entry point for all applications
+func Logger(log *log.Logger) web.Middleware {
+  f := func(before web.Handler) web.Handler {
+    h := func(w http.ResponseWriter, r *http.Request) error {
+      v, ok := r.Context().Value(web.KeyValues).(*web.Values)
+      if !ok {
+        return errors.New("web value missing from context")
+      }
+      err := before(w, r)
+      log.Printf("(%d) : %s %s -> %s (%s)",
+        v.StatusCode,
+        r.Method, r.URL.Path,
+        r.RemoteAddr, time.Since(v.Start),
+      )
+      return err
+    }
+    return h
+  }
+  return f
+}
+```
+
+## Handling Requests
+
+To illustrate how requests are handled by the service we can imagine creating a simple POST request to create a product and take a look at the data transformations between function calls. The application has its own web framework, composed of: each will be discussed briefly in the section. Located in the platform folder, the `web` package is used to handle all web requests, responses and potential errors.
+
+![](/media/why.gif)
+
+[explain]
+
+```go
+// api/cmd/api/internal/routes.go
+func API(shutdown chan os.Signal, repo *database.Repository, log *log.Logger, FrontendAddress string) http.Handler {
+  app := web.NewApp(shutdown, log, mid.Logger(log), mid.Errors(log), mid.Panics(log))
+  c := cors.New(cors.Options{
+    AllowedOrigins:   []string{FrontendAddress},
+    AllowCredentials: true,
+  })
+  p := Products{repo: repo, log: log}
+  app.Handle(http.MethodGet, "/v1/products", p.List)
+  app.Handle(http.MethodPost, "/v1/products", p.Create)
+  app.Handle(http.MethodGet, "/v1/products/{id}", p.Retrieve)
+  app.Handle(http.MethodPut, "/v1/products/{id}", p.Update)
+  app.Handle(http.MethodDelete, "/v1/products/{id}", p.Delete)
+  return c.Handler(app)
+}
+```
+
+[explain]
+
+```go
+type ctxKey int
+
+const KeyValues ctxKey = 1
+
+type Values struct {
+  StatusCode int
+  Start      time.Time
+}
+
+type Handler func(http.ResponseWriter, *http.Request) error
+
 type App struct {
   mux      *chi.Mux
   log      *log.Logger
@@ -399,7 +376,6 @@ type App struct {
   shutdown chan os.Signal
 }
 
-// New App constructs internal state for a new  app
 func NewApp(shutdown chan os.Signal, logger *log.Logger, mw ...Middleware) *App {
   return &App{
     log:      logger,
@@ -410,26 +386,18 @@ func NewApp(shutdown chan os.Signal, logger *log.Logger, mw ...Middleware) *App 
 }
 ```
 
+[explain]
+
 ```go
-// Handle associates a handler function with an HTTP Method and URL pattern.
-//
-// It converts our custom handler type to the std lib Handler type. It captures
-// errors from the handler and serves them to the client in a uniform way.
 func (a *App) Handle(method, url string, h Handler) {
-
   h = wrapMiddleware(a.mw, h)
-
   fn := func(w http.ResponseWriter, r *http.Request) {
     v := Values{
       Start: time.Now(),
     }
-
-    ctx := r.Context()                          // get original context
-    ctx = context.WithValue(ctx, KeyValues, &v) // create a new context with new key/value
-    // you can't directly update a request context
-    r = r.WithContext(ctx) // create a new request and pass context
-
-    // Call the handler and catch any propagated error.
+    ctx := r.Context()
+    ctx = context.WithValue(ctx, KeyValues, &v)
+    r = r.WithContext(ctx)
     if err := h(w, r); err != nil {
       a.log.Printf("ERROR : unhandled error\n %+v", err)
       if IsShutdown(err) {
@@ -437,8 +405,170 @@ func (a *App) Handle(method, url string, h Handler) {
       }
     }
   }
-
   a.mux.MethodFunc(method, url, fn)
+}
+
+func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+  w.Header().Set("Content-Type", "application/json")
+  a.mux.ServeHTTP(w, r)
+}
+```
+
+[explain]
+
+```go
+func (p *Products) Create(w http.ResponseWriter, r *http.Request) error {
+  var np product.NewProduct
+  if err := web.Decode(r, &np); err != nil {
+    w.WriteHeader(http.StatusBadRequest)
+    return err
+  }
+  prod, err := product.Create(r.Context(), p.repo, np, time.Now())
+  if err != nil {
+    return err
+  }
+  return web.Respond(r.Context(), w, prod, http.StatusCreated)
+}
+```
+
+[explain]
+
+```go
+func Decode(r *http.Request, val interface{}) error {
+  decoder := json.NewDecoder(r.Body)
+  decoder.DisallowUnknownFields()
+  if err := decoder.Decode(val); err != nil {
+    return NewRequestError(err, http.StatusBadRequest)
+  }
+  if err := validate.Struct(val); err != nil {
+    verrors, ok := err.(validator.ValidationErrors)
+    if !ok {
+      return err
+    }
+    lang, _ := translator.GetTranslator("en")
+    var fields []FieldError
+    for _, verror := range verrors {
+      field := FieldError{
+        Field: verror.Field(),
+        Error: verror.Translate(lang),
+      }
+      fields = append(fields, field)
+    }
+    return &Error{
+      Err:    errors.New("field validation error"),
+      Status: http.StatusBadRequest,
+      Fields: fields,
+    }
+  }
+  return nil
+}
+```
+
+By adopting an SQL query builder, not only do I have a better understanding of the queries that are being made to the database, I can resue my existing SQL knowledge from project to project. Bypassing the ineffiency of requests, and opaqueness that comes with ORM abastraction layers.
+
+```go
+func Create(ctx context.Context, repo *database.Repository, np NewProduct, now time.Time) (*Product, error) {
+  p := Product{
+    ID:          uuid.New().String(),
+    Name:        np.Name,
+    Price:       np.Price,
+    Description: np.Description,
+    Created:     now.UTC(),
+    Tags:        np.Tags,
+  }
+  stmt := repo.SQ.Insert(
+    "products",
+  ).SetMap(map[string]interface{}{
+    "id":          p.ID,
+    "name":        p.Name,
+    "price":       p.Price,
+    "description": p.Description,
+    "created":     p.Created,
+    "tags":        p.Tags,
+  })
+  if _, err := stmt.ExecContext(ctx); err != nil {
+    return nil, errors.Wrapf(err, "inserting product: %v", np)
+  }
+  return &p, nil
+}
+```
+
+[explain]
+
+```go
+func Respond(ctx context.Context, w http.ResponseWriter, val interface{}, statusCode int) error {
+  v := ctx.Value(KeyValues).(*Values)
+  v.StatusCode = statusCode
+  if statusCode == http.StatusNoContent {
+    w.WriteHeader(statusCode)
+    return nil
+  }
+  res, err := json.Marshal(val)
+  if err != nil {
+    return err
+  }
+  w.WriteHeader(statusCode)
+  if _, err := w.Write(res); err != nil {
+    return err
+  }
+  return nil
+}
+```
+
+## Error Handling
+
+Errors get bubbled up to the main.go file. The run function is the only place in the application that can throw a fatal error. We are ready discussed the need to graceful shutdown which occurs which may occur due to signals outside the application. But what happens if the application it self wishes to shutdown it also need a mechanism to signal a shutdown.
+
+![](/media/smoke.gif)
+
+[explain]
+
+```go
+package web
+
+import "github.com/pkg/errors"
+
+type FieldError struct {
+  Field string `json:"field"`
+  Error string `json:"error"`
+}
+
+type ErrorResponse struct {
+  Error  string       `json:"error"`
+  Fields []FieldError `json:"fields,omitempty"`
+}
+
+type Error struct {
+  Err    error
+  Status int
+  Fields []FieldError
+}
+
+func NewRequestError(err error, status int) error {
+  return &Error{Err: err, Status: status}
+}
+
+func (e *Error) Error() string {
+  return e.Err.Error()
+}
+
+type shutdown struct {
+  Message string
+}
+
+func (s *shutdown) Error() string {
+  return s.Message
+}
+
+func NewShutdownError(message string) error {
+  return &shutdown{message}
+}
+
+func IsShutdown(err error) bool {
+  if _, ok := errors.Cause(err).(*shutdown); ok {
+    return true
+  }
+  return false
 }
 ```
 
@@ -447,44 +577,394 @@ we call the SignalShutdown function to gracefully shutdown the app which sends a
 the shutdown channel.
 
 ```go
-
-// SignalShutdown is used to gracefully shutdown the app when an integrity
-// issue is identified.
 func (a *App) SignalShutdown() {
   a.log.Println("error returned from handler indicated integrity issue, shutting down service")
   a.shutdown <- syscall.SIGSTOP
 }
 ```
 
+### Error Handling Middleware
+
+I deliberately left out some important functions from the Middleware section so I could address it here.
+
+The API has two error handling middleware functions. One for errors and another to recover from panics.
+
+[explain]
+
+```go
+func Errors(log *log.Logger) web.Middleware {
+  f := func(before web.Handler) web.Handler {
+    h := func(w http.ResponseWriter, r *http.Request) error {
+      if err := before(w, r); err != nil {
+        log.Printf("ERROR : %+v", err)
+        if err := web.RespondError(r.Context(), w, err); err != nil {
+          return err
+        }
+        if ok := web.IsShutdown(err); ok {
+          return err
+        }
+      }
+      return nil
+    }
+    return h
+  }
+  return f
+}
+```
+
+[explain]
+
+```go
+func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
+  if webErr, ok := errors.Cause(err).(*Error); ok {
+    er := ErrorResponse{
+      Error:  webErr.Err.Error(),
+      Fields: webErr.Fields,
+    }
+    if err := Respond(ctx, w, er, webErr.Status); err != nil {
+      return err
+    }
+    return nil
+  }
+  er := ErrorResponse{
+    Error: http.StatusText(http.StatusInternalServerError),
+  }
+  if err := Respond(ctx, w, er, http.StatusInternalServerError); err != nil {
+    return err
+  }
+  return nil
+}
+```
+
+Panics are [explain]
+
+```go
+func Panics(log *log.Logger) web.Middleware {
+  f := func(after web.Handler) web.Handler {
+    h := func(w http.ResponseWriter, r *http.Request) (err error) {
+      defer func() {
+        if r := recover(); r != nil {
+          err = errors.Errorf("panic: %v", r)
+          log.Printf("%s", debug.Stack())
+        }
+      }()
+      return after(w, r)
+    }
+    return h
+  }
+  return f
+}
+```
+
 The signal is received at the the other end of the shutdown channel and handled by the `select` in the main function.
-
-## Handling Requests
-
-The application has its own web frameworks, located in the platform folder. It's used to handle web requests, responses and potential errors.
-
-## Middleware
-
-The application has its own middleware mechanism.
-
-![](/media/middleware.png)
 
 ## Seeding & Migrations
 
-Seeding and migrations can be performed outside the project Go code and from within the admin application. Performing seeding and migrations with go-migrate. In the makefile we make use of go-migrate within a container however in the admin application we use go code. Both implementation make use of the internal schema folder where seed and migration files are stored and accumulated as the project database grows in size and complexity. Performing seeding and migration task via a makefile is for convenience but through Go code it is essential to the for integration tests to be able to programmatically setup a temporary database to run test against successfully.
+Migrations can be performed in 2 ways: through a cli application and or the Makefile. Both implementations make use of [go-migrate](https://github.com/golang-migrate/migrate). The only difference is the Makefile leverages a [Docker image](https://hub.docker.com/r/migrate/migrate/). The Makefile implementation is for convenience since we are already adopting a Makefile workflow. The APIs use of the code implementation is out of necessity so that integration tests can perform seeding and migrations as well against a temporary test database.
+
+![](/media/seeds.gif)
+
+### Seeding & Migrating With The CLI
+
+The CLI implementation is takes the go-migrate library and applies its methods from a switch case. We can seed and migrate up to the latest version.
+
+[explain]
+
+```go
+// api/internal/schema/migrate.go
+const dest = "/migrations"
+
+func Migrate(dbname string, url string) error {
+  src := fmt.Sprintf("file://%s%s", RootDir(), dest)
+  m, err := migrate.New(src, url)
+  if err != nil {
+    log.Fatal(err)
+  }
+  if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+    log.Fatal(err)
+  }
+  return nil
+}
+```
+
+[explain]
+
+```go
+// api/internal/schema/seed.go
+const folder = "/seeds/"
+const ext = ".sql"
+
+func Seed(db *sqlx.DB, filename string) error {
+  tx, err := db.Beginx()
+  if err != nil {
+    return err
+  }
+  src := fmt.Sprintf("%s%s%s%s", RootDir(), folder, filename, ext)
+  dat, err := ioutil.ReadFile(src)
+  if err != nil {
+    return err
+  }
+  if _, err := tx.Exec(string(dat)); err != nil {
+    if err := tx.Rollback(); err != nil {
+      return err
+    }
+    return err
+  }
+  return tx.Commit()
+}
+```
+
+[explain]
+
+```go
+// api/internal/schema/path.go
+var (
+  _, b, _, _ = runtime.Caller(0)
+  basepath   = filepath.Dir(b)
+)
+
+func RootDir() string {
+  return basepath
+}
+```
+
+[explain]
+
+```go
+// api/cmd/admin/main.go
+switch cfg.Args.Num(0) {
+case "migrate":
+  if err := schema.Migrate(cfg.DB.Name, repo.URL.String()); err != nil {
+    return errors.Wrap(err, "applying migrations")
+  }
+  fmt.Println("Migrations complete")
+  return nil
+
+case "seed":
+  if cfg.Args.Num(1) == "" {
+    return errors.Wrap(err, "hint: seed <name> ")
+  }
+  if err := schema.Seed(repo.DB, cfg.Args.Num(1)); err != nil {
+    return errors.Wrap(err, "seeding database")
+  }
+  fmt.Println("Seed data complete")
+  return nil
+}
+
+fmt.Println("commands: migrate|seed <filename>")
+return nil
+```
+
+With this code the both the admin cli `application api/cmd/admin/main.go` and `api/cmd/api/tests/products_tests.go` can seed and migrate.
+
+### Seeding & Migrating With The Makefile
+
+From the container perspective [usage](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate#usage) of go-migrate is straight forward because it uses the same cli interface as the regular library.
+
+Here's how we can create a migration:
+
+```makefile
+docker run \
+--volume $(pwd)/api/internal/schema/migrations:/migrations \
+--network postgres-net migrate/migrate create
+-ext sql \
+-dir /migrations \
+-seq create_users_table
+```
+
+The Makefile implementation makes use of variables, args and syntactic sugar to allow the client code to look like this:
+
+```bash
+make migration <name>
+```
+
+Instead of this:
+
+```bash
+make migrations name=<name>
+```
+
+This cleaner syntax is possible by comparing the values found in `MAKECMDGOALS` at runtime. If the first word matches (migration, seed, or insert) we interpret the second word as the argument for the command and stored the value in a variable.
+
+```makefile
+# store the name argument
+ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),migration seed insert))
+  name := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(name):;@:)
+endif
+
+# store the number argument
+ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),up down force))
+  num := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+  $(eval $(num):;@:)
+  ifndef num
+    ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),down))
+      num := 1
+    endif
+  endif
+endif
+```
+
+The advantage of using the makefile versus the cli admin application is that you can migrate up and down.
+
+```makefile
+# makefile
+migration:
+  ifndef name
+    $(error migration name is missing -> make migration <name>)
+  endif
+
+  # [ generating migration files ... ]
+  docker run \
+  --volume $(MIGRATIONS_VOLUME) \
+  --network $(POSTGRES_NET) migrate/migrate \
+  create \
+  -ext sql \
+  -dir /migrations \
+  -seq $(name)
+
+up:
+  # [ migrating up ... ]
+  docker run \
+  --volume $(MIGRATIONS_VOLUME) \
+  --network $(POSTGRES_NET) migrate/migrate \
+  -path /migrations \
+  -verbose \
+  -database $(URL) up $(num)
+
+down:
+  # [ migrating down ... ]
+  docker run \
+  --volume $(MIGRATIONS_VOLUME) \
+  --network $(POSTGRES_NET) migrate/migrate \
+  -path /migrations  \
+  -verbose \
+  -database $(URL) down $(num)
+```
+
+Seeding the database is composed of three steps.
+
+1. Generating a seed file
+2. Adding SQL to that file, and then
+3. Inserting it in the database.
+
+```bash
+make seed <name>
+```
+
+As soon as you create a seed file you are expected to add SQL to the generated file before you insert.
+
+```bash
+make insert <name>
+```
+
+```makefile
+# makefile
+seed:
+  ifndef name
+    $(error seed name is missing -> make insert <name>)
+  endif
+  # [ generating seed file ... ]
+  mkdir -p $(PWD)/$(SEED_DIR)
+  touch $(PWD)/$(SEED_DIR)/$(name).sql
+
+insert:
+  ifndef name
+  $(error seed filename is missing -> make insert <filename>)
+  endif
+  # [ inserting $(name) seed data ... ]
+  docker cp $(PWD)/$(SEED_DIR)/$(name).sql $(shell docker-compose ps -q db):/seed/$(name).sql \
+  && docker exec -u root db psql $(POSTGRES_DB) $(POSTGRES_USER) -f /seed/$(name).sql
+```
+
+You will see seeding and migrations in action in the demo. For further reference checkout out this [PostgreSQL tutorial](https://github.com/golang-migrate/migrate/blob/master/database/postgres/TUTORIAL.md) from go-migrate.
 
 ## Integration Testing
 
-Integration tests use testcontainers-go. A testing library ported from Java originally and now available in many languages. With it, we can programmatically create a postgres database container for go tests. There are many benefits to using the library for integration testing. Before its use, the following problems were in common place in go programs when needing to run integration tests and containers.
+[TestContainers-Go](https://github.com/testcontainers/testcontainers-go) is an amazing library providing a friendly API to run Docker containers. With it, we can programmatically create a postgres database container for go tests. There are many benefits to using the library for integration testing. You can avoid problems like host port conflicts, stale containers, CI headaches, and running tests prematurely before the database is ready.
 
-...
+Here's an example postgres container:
 
-The benefits are:
+```go
+// api/cmd/api/tests/product_test.go
+pgc, err := tc.GenericContainer(ctx, tc.GenericContainerRequest{
+  ContainerRequest: tc.ContainerRequest{
+    Image:        "postgres",
+    ExposedPorts: []string{postgresPort.Port()},
+    Env: map[string]string{
+      "POSTGRES_PASSWORD": cfg.DB.Password,
+      "POSTGRES_USER":     cfg.DB.User,
+    },
+    WaitingFor: wait.ForAll(
+      wait.ForLog("database system is ready to accept connections"),
+      wait.ForListeningPort(postgresPort),
+    ),
+  },
+  Started:          true,
+})
+```
 
-...
+[explain how it makes use of the seeding and migrations]
 
-Let's review how we are using the library.
+## Profiling
 
-...
+<div>
+To measure how our programs are performing we use profiling. <i>The Go Programming langauge</i> by Alan A. A. Donovan and Brian W. Kernighan writes, <div style="display:inline;background-color: #D2F774">"Profiling is an automated approach to performance measurement based on sampling a number of profile events during the execution, then extrapolating from them during a post-processing step; the resulting statistical summary is called a profile".</div> Amazingly, Go supports many kinds of profiling. The standard library supports profiling with a package named <a href="https://golang.org/pkg/net/http/pprof/" target="_blank">pprof</a>. Here's a few predefined profiles pprof provides:</div>
+
+- block: stack traces that led to blocking on synchronization primitives
+- goroutine: stack traces of all goroutines
+- heap: sampling traces of all current goroutines
+- mutex: stack traces of holders of contended mutexes
+- profile: CPU profile
+
+![](/media/experiement.gif)
+
+Using pprof to measure an API, involves importing `net/http/pprof` the standard HTTP interface to profiling data. Since we don't use the import directly and just wish to use its side effects we place and \_ in front of the import. The import will register handlers under /debug/pprof/ using the DefaultServeMux. If you are not using the DefaultServeMux you need to register the handlers with the mux your are using. It's worth noting, that these handlers should not be accessible to the public because of this we use the DefaultServerMux on a dedicated port in a separate goroutine to leverage pprof.
+
+```go
+// api/cmd/api/main.go
+go func() {
+  log.Printf("main: Debug service listening on %s", cfg.Web.Debug)
+  err := http.ListenAndServe(cfg.Web.Debug, nil)
+  if err != nil {
+    log.Printf("main: Debug service listening on %s", cfg.Web.Debug)
+  }
+}()
+```
+
+In production, we won't expose the registered handlers pprof provides to Traefik. If we navigate to http://localhost:6060/debug/pprof/ we'll see something like this:
+
+![](/media/pprof.png)
+
+Some additional utilities you may want to install are an HTTP load generator like [hey](https://github.com/rakyll/hey) and [graphviz](http://graphviz.gitlab.io/download/) to visualize a cpu profile in a web page.
+
+```bash
+brew install hey graphviz
+```
+
+Then in one terminal you can make 10 concurrent connections to make 2000 requests to the api
+
+```bash
+hey -c 10 -n 2000 https://localhost:4000/v1/products
+```
+
+While in another terminal, we leverage one of the register handlers setup by pprof. In the case, we want to capture a cpu profile for a duration of 10 seconds to measure the server activity.
+
+```bash
+go tool pprof http://localhost:6060/debug/pprof/profile\?seconds\=10
+```
+
+Afterward we can run the command `top -cum` (to sort by the fourth and fifth columns) to analyze the profile captured. The fourth and fifth columns indicate the number of samples that the function appeared in (while running or waiting for a function to return).
+
+![](/media/profiler.png)
+
+Or view a visualization by typing `web` into the pprof command prompt which will automatically open a web browser window.
+
+![](/media/web.png)
+
+![simple right?](/media/notreally.gif)
+
+Just Kidding! It's a lot to digest and super challenging to fit into one post. That's one of the reasons I left out authentication and observability metrics. Enough technical talk. Let's dive into a demo and see it in action.
 
 # Demo
 
@@ -710,3 +1190,6 @@ A lot is happening let's recap. This demonstration included seeding and migratio
 During testing, we programmatically created a temporary database. In the background, the test database leveraged the same seeding and migration functionality we saw earlier. This enables our tests to set things up before they run.
 
 # Conclusion
+
+We saw that project structure is a big deal in GO. You're going to have a difficult time laying out your project architecture in Go if you are used to creating folders to organize your code. In demonstrating the web framework, we saw that at times it's best to build things yourself to not build a black box bewteen components. The choice between whether or not to use an ORM is a big deal that can come back to haunt you later, the less data abstraction layers the more transparent your architecture will be. There's a ton of value working with a transparent architecture you actually understand.
+People coding in Go as their first language may have an advantage here, coming from Node I have to unlearn habits that are preceived as code smell in Go. But I truly believe the langauge is worth mastering because of it's design choices, concurrency model, code profiling tools, and great standard library.
