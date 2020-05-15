@@ -1,20 +1,23 @@
 ---
 template: post
-title: The Ultimate Go and React Development Setup with Docker (Part 1)
+title: Go and React Development with Docker pt.1
 slug: ultimate-go-react-development-setup-with-docker
 draft: false
 date: 2020-01-08T12:54:37.547Z
 description: >-
-  Lately, I've been migrating from Node
-  to Golang. Using Node, I had a great fullstack development workflow, but I 
-  struggled to achieve one in Go. What I wanted was the ability to live reload 
-  a Go API and debug it with breakpoints while in a container. In this tutorial
-  we'll setup the ultimate Go and React development setup with Docker. This post covers “Building A Workflow”.
-category: development
+  Using Node, I had a great fullstack development workflow, but I struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and debug it with breakpoints while in a container. In this tutorial we'll setup the ultimate Go and React development setup with Docker.
+category: "Go and React Series"
 tags:
   - Delve Docker Golang Makefile Postgres Traefik VSCode
 socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 ---
+
+<!-- PART OF A SERIES -->
+<center>
+<i>
+  <a href ="/category/go-and-react-series/">Part of the Go and React Series</a>
+</i>
+</center>
 
 ![matthew-sleeper-kn8atn5_zgq-unsplash.jpg](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
 
@@ -22,9 +25,7 @@ _Updated: January 29th, 2020_
 
 # Introduction
 
-This post covers “Building A Workflow”.
-
-Lately, I've been migrating from Node to Golang. Using Node, I had a great fullstack development workflow, but I struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and debug it with breakpoints while in a container. In this tutorial we'll setup the ultimate Go and React development setup with Docker.
+Lately, I've been migrating from Node to Go. Using Node, I had a great fullstack development workflow, but I struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and debug it with breakpoints while in a container. In this tutorial we'll setup the ultimate Go and React development setup with Docker.
 
 I expect you to be familiar with fullstack development. I won't teach you every painstaking detail about how to create a React app or even a Go API. It's fine if you're new to Docker. I'll explain the basics when needed. So relax, you'll be able to copy and paste code as you go.
 
@@ -1259,3 +1260,5 @@ In January I attended GoDays 2020 in Berlin. There was a wonderful presentation 
 # Conclusion
 
 I hope you've learned a bunch about how you can build the ultimate Go and React development setup with Docker. No matter what language you use on the client or server side, the basic principles still apply. Enjoy improving your own developer workflow. Happy Coding.
+
+In the [next post](ultimate-go-react-development-setup-with-docker-part2) I discuss transitioning to Go, the challenges to expect and where to get help.
