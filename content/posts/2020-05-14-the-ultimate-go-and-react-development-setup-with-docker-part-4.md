@@ -58,31 +58,26 @@ Our goal is going from an empty database to a seeded one. We will create a datab
 The contents of `.env` should look like this:
 
 ```makefile
-# DEVELOPMENT ENVIRONMENT VARIABLES
+# ENVIRONMENT VARIABLES
 
 API_PORT=4000
 PPROF_PORT=6060
 CLIENT_PORT=3000
 
-POSTGRES_DB=postgres
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=db
-POSTGRES_NET=postgres-net
+DB_URL=postgres://postgres:postgres@db:5432/postgres?sslmode=disable
 
-REACT_APP_BACKEND=http://localhost:4000/v1
+REACT_APP_BACKEND=https://localhost:4000/v1
+API_WEB_FRONTEND_ADDRESS=https://localhost:3000
 ```
 
 ## Step 2) Unblock port 5432 for Postgres
 
-Our makefile and docker-compose yaml file will reference the standard postgres port: `5432`. Before continuing, close any existing postgres connections to free up that port.
-
 ## Step 3) Create self-signed certificates
 
-Generate the required certificates. These certificates will be automatically placed under `./api/tls/`.
-
 ```bash
-make cert
+mkdir -p ./api/tls
+go run $(go env GOROOT)/src/crypto/tls/generate_cert.go --rsa-bits=2048 --host=localhost
+mv *.pem ./api/tls
 ```
 
 ![](/media/cert.png)
@@ -92,7 +87,7 @@ make cert
 The database will run in the background with the following command:
 
 ```bash
-make db
+docker-compose up -d db
 ```
 
 ![](/media/db.png)
@@ -102,7 +97,7 @@ make db
 Make a migration to create a products table.
 
 ```bash
-make migration create_products_table
+docker-compose run migration create_products_table
 ```
 
 ![](/media/create-products.png)
@@ -142,7 +137,7 @@ The down migration simply reverts the up migration if we need to.
 Let's include tagged information for each product. Make another migration to add a tags Column to the products table.
 
 ```bash
-make migration add_tags_to_products
+docker-compose run migration add_tags_to_products
 ```
 
 ![](/media/add-tags.png)
@@ -168,13 +163,13 @@ DROP Column tags;
 We have 2 migrations but we yet to apply them. Migrate the database up to the latest migration.
 
 ```bash
-make up
+docker-compose run up # you can migrate down with "docker-compose run down"
 ```
 
 Now if we print out the selected migration version, it should render `2`, the number of total migrations.
 
 ```bash
-make version
+docker-compose run version
 ```
 
 ![](/media/up-version.png)
@@ -184,7 +179,7 @@ make version
 The database is still empty. Create a seed file for the products table.
 
 ```bash
-make seed products
+touch ./api/internal/schema/seeds/products.sql
 ```
 
 This adds an empty `products.sql` seed file to the project. Located under: `./api/internal/schema/seeds/products.sql`.
@@ -206,18 +201,25 @@ ON CONFLICT DO NOTHING;
 Finally, apply the seed data to the database.
 
 ```bash
-make insert products
+docker-compose exec db psql postgres postgres -f /seed/products.sql
 ```
 
 ![](/media/insert.png)
 
 Great, now the database is ready! The output should be `INSERT 0 3`. The 3 represents the 3 rows inserted. You can ignore the 0 representing [OIDS](https://www.postgresql.org/message-id/4AD5F063.8050708@iol.ie).
 
+Enter the database and examine its state.
+
+```makefile
+docker-compose run debug-db
+```
+
+![Minion](/media/compose-db-debug.png)
+
 ## Step 5) Run the frontend and backend
 
 ```bash
-make api
-make client
+docker-compose up api client
 ```
 
 ![run containers](/media/run.png "run containers")
@@ -236,7 +238,8 @@ _To replicate the production environment as much as possible locally, we use sel
 Along with unit tests, our tests setup a temporary postgres database for testing. Under the hood it's using Docker programmatically.
 
 ```bash
-make test-api
+cd api
+go test ./...
 ```
 
 ![](/media/test.png)
