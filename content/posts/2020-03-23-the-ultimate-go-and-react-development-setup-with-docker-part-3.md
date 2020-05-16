@@ -25,9 +25,10 @@ socialImage: "/media/part3.jpg"
 
 [Part 2](/ultimate-go-react-development-setup-with-docker-part2) was about some challenges I faced in migrating to a Go API. This post covers the components of a production ready Go API.
 
+My demo API is actually an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I simply extended it, adding cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. I'm going to talk about the API implementation and bring up related ideas when necessary. I hope you'll feel confident in navigating the source code on your own.
+
 We focus on:
 
-- [The API](#the-api)
 - [Package Oriented Design](#package-oriented-design)
 - [Configuration](#configuration)
 - [Database Connection](#database-connection)
@@ -46,23 +47,19 @@ We focus on:
 
 ## Getting Started
 
-Clone the project repo and checkout `part2`.
+Clone the project repo and checkout `part3`.
 
 ```bash
 git clone https://github.com/ivorscott/go-delve-reload
 cd go-delve-reload
-git checkout part2
+git checkout part3
 ```
 
 Please review [Setting Up VSCode](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#setting-up-vscode) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
 
-# The API
-
-My demo API is actually an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I simply extended it, adding cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. I'm going to talk about the API implementation and bring up related ideas when necessary. I hope you'll feel confident in navigating the [source code](https://github.com/ivorscott/go-delve-reload/tree/part2) on your own.
+## Package Oriented Design
 
 ![architecture](/media/architechture.png)
-
-## Package Oriented Design
 
 <div><div title="definition" style="display:inline;background-color: #D2F774">Package Oriented Design is a design strategy and project structure Ardan Labs uses to enforce good design guidelines meant to keep projects organized and sustainable as they grow.</div> The strategy derives from 3 goals: <i>purpose, usability and portability</i>.</div>
 

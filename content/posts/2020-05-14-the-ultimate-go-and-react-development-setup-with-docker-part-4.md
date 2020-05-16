@@ -1,6 +1,6 @@
 ---
 template: post
-title: Seeding and Migrations Workflow pt.4
+title: My API Workflow with Go pt.4
 slug: ultimate-go-react-development-setup-with-docker-part4
 draft: false
 date: 2020-04-14T9:10:15.296Z

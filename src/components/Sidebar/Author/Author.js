@@ -7,9 +7,9 @@ type Props = {
   author: {
     name: string,
     bio: string,
-    photo: string
+    photo: string,
   },
-  isIndex: ?boolean
+  isIndex: ?boolean,
 };
 
 const Author = ({ author, isIndex }: Props) => (
@@ -37,7 +37,10 @@ const Author = ({ author, isIndex }: Props) => (
         </Link>
       </h2>
     )}
-    <p className={styles["author__subtitle"]}>{author.bio}</p>
+    <p className={styles["author__subtitle"]}>
+      {author.bio}
+      {/* <div style={{ padding: 20, background: "pink" }}></div> */}
+    </p>
   </div>
 );
 
