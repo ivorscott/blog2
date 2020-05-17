@@ -11,7 +11,7 @@ import type { PageContext, AllMarkdownRemark } from "../types";
 
 type Props = {
   data: AllMarkdownRemark,
-  pageContext: PageContext
+  pageContext: PageContext,
 };
 
 const CategoryTemplate = ({ data, pageContext }: Props) => {
@@ -23,7 +23,7 @@ const CategoryTemplate = ({ data, pageContext }: Props) => {
     prevPagePath,
     nextPagePath,
     hasPrevPage,
-    hasNextPage
+    hasNextPage,
   } = pageContext;
 
   const { edges } = data.allMarkdownRemark;
@@ -71,6 +71,7 @@ export const query = graphql`
           frontmatter {
             date
             description
+            socialImage
             category
             title
           }
