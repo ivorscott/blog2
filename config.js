@@ -4,7 +4,7 @@ module.exports = {
   url: "https://ivorscott.netlify.com",
   pathPrefix: "/",
   title: "Art, Tech & Ideas",
-  subtitle: "Design, develop, and deploy.",
+  subtitle: "I design, develop, and deploy.",
   copyright: "© All rights reserved.",
   disqusShortname: "ivorscott",
   postsPerPage: 4,
@@ -13,22 +13,23 @@ module.exports = {
   menu: [
     {
       label: "Articles",
-      path: "/"
+      path: "/",
     },
     {
       label: "About me",
-      path: "/pages/about"
-    }
+      path: "/pages/about",
+    },
   ],
   author: {
     name: "Ivor Scott",
     photo: "/photo.jpg",
-    bio: "Design, develop, and deploy.\n",
+    bio:
+      "Artist, Software Engineer, Traefik Ambassador and Docker Mastery Teaching Assistant. Based in Berlin.",
     contacts: {
       email: "ivor@devpie.io",
       twitter: "ivorsco77",
       github: "ivorscott",
-      cv: "https://hire.ivorscott.com"
-    }
-  }
+      cv: "https://hire.ivorscott.com",
+    },
+  },
 };

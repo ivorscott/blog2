@@ -23,9 +23,11 @@ socialImage: "/media/part3.jpg"
 
 # Introduction
 
-[Part 2](/ultimate-go-react-development-setup-with-docker-part2) was about some challenges I faced in migrating to a Go API. This post covers the components of a production ready Go API.
+This post builds upon the previous posts. It covers building a production ready API. My API is an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I added cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. Similar to Part 1, running the API container allows live reloading, but now this behavior is optional. This tweet influenced my descision:
 
-My demo API is actually an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I simply extended it, adding cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. I'm going to talk about the API implementation and bring up related ideas when necessary. I hope you'll feel confident in navigating the source code on your own.
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Folks, keep docker out of your edit/compile/test inner loop.</p>&mdash; Dave Cheney (@davecheney) <a href="https://twitter.com/davecheney/status/1232078682287591425?ref_src=twsrc%5Etfw">February 24, 2020</a></blockquote>
+
+I read the thread and made my own interpretation: _don't tightly couple_. Making Docker opt-in ensures we never loose sight of the idomatic vision of Go. Go has convention over configuration. The moment we diverge from convention and require a non-required dependency, in order for our app to function, is the moment we loose all the integrity of our codebase.
 
 We focus on:
 
@@ -55,7 +57,7 @@ cd go-delve-reload
 git checkout part3
 ```
 
-Please review [Setting Up VSCode](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#setting-up-vscode) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
+Please review [Setting Up VSCode](/ultimate-go-react-development-setup-with-docker#go-modules) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
 
 ## Package Oriented Design
 
@@ -63,7 +65,7 @@ Please review [Setting Up VSCode](https://blog.ivorscott.com/ultimate-go-react-d
 
 <div><div title="definition" style="display:inline;background-color: #D2F774">Package Oriented Design is a design strategy and project structure Ardan Labs uses to enforce good design guidelines meant to keep projects organized and sustainable as they grow.</div> The strategy derives from 3 goals: <i>purpose, usability and portability</i>.</div>
 
-Package Oriented Design suggests _Application Projects_ should have `cmd` and `internal` folders at the root of the project. The cmd folder houses the main applications for the project, given the likelihood of there being more than one, for example, an api, cli, web app etc. The internal folder contains any code that should be kept internal to the project. The internal folder is necessary because breaking changes may occur when a project's public API surface changes. This idea is described by _Hyrum's law:_
+Package Oriented Design suggests _Application Projects_ should have `cmd` and `internal` folders at the root of the project. The _cmd_ folder houses the main applications for the project, given the likelihood of there being more than one, for example, an api, cli, web app etc. The _internal_ folder contains any code that should be kept internal to the project. The internal folder is necessary because breaking changes may occur when a project's public API surface changes. This idea is described by _Hyrum's law:_
 
 <blockquote title="evidence">
 <div title="general" style="display:inline;background-color: #FFFB78">
@@ -71,21 +73,21 @@ Package Oriented Design suggests _Application Projects_ should have `cmd` and `i
 
 -- Winters, Titus. Software Engineering at Google. Lessons Learned from Programming Over Time. O'REILLY, 2020. </blockquote>
 
-By using the term _internal_ as a folder name you receive compiler protection in Go. Packages that exist under internal will be restricted so that they are only imported by packages apart of the same root folder.
+By using the term internal as a folder name you receive compiler protection in Go. Packages that exist under internal will be restricted so that they are only imported by packages in the same root folder.
 
 ![architecture](/media/internal-folder.png)
 
-In Package Oriented Design, the internal packages are split into two types: _business_ and _platform specific_ logic. A _platform_ folder contains the core packages of the project that are unrelated to the business domain. For example, the platform folder in the demo contains 3 foundational packages: _the database, configuration and web packages._
+In Package Oriented Design, the internal packages are split into two types of logic: _business_ and _platform specific_. The _platform_ folder contains the core packages of the project that are unrelated to the business domain (therefore reusable across projects). For example, the platform folder in the demo contains 3 foundational packages: _the database, configuration and web packages._
 
 ![architecture](/media/internal-platform.png)
 
-Everything else in the internal folder supports the business domain. To learn more about package oriented design, here's a couple articles about [the strategy](https://www.ardanlabs.com/blog/2017/02/package-oriented-design.html) and [the philosophy](https://www.ardanlabs.com/blog/2017/02/design-philosophy-on-packaging.html) behind it. Top level packages also include `tls` and `pkg` folders. The tls folder holds self-signed certificates and pkg contains reusable packages that might be used in other projects. A [github repository](https://github.com/golang-standards/project-layout) documents the standard project layout ideas in Go. However, there are no strict guidelines, only common patterns you may see across projects. In the end, every developer is responsible for designing their own structure. Define a set of guidelines and stick to them. This will help you establish a mental model of your codebase. Not knowing where things belong is a sign that you haven't established a system.
+Everything else in the internal folder supports the business domain. To learn more about package oriented design, here's a couple articles about [the strategy](https://www.ardanlabs.com/blog/2017/02/package-oriented-design.html) and [the philosophy](https://www.ardanlabs.com/blog/2017/02/design-philosophy-on-packaging.html) behind it. Top level packages in my example also include `tls` and `pkg` folders. The tls folder holds certificates and pkg contains reusable packages that might be used in other projects. A [github repository](https://github.com/golang-standards/project-layout) documents the standard project layout ideas in Go. However, there are no strict guidelines only common patterns you may see in projects. In the end, every developer is responsible for designing their own structure. Define a set of guidelines and stick to them. This will help you establish a mental model of your codebase. Not knowing where things belong is a sign that you haven't established a system.
 
 ![architecture](/media/pkg.gif)
 
 ## Configuration
 
-In Part 1, API configuration came from environment variables in the docker-compose file. Unfortunately, the old approach was dependent on docker and docker secret values, making it harder to opt-out of a containerized API in development. Furthermore, there was no way of retrieving non-secret configuration values. The new approach reserves docker secrets for production and adopts the [Ardan Labs configuration package](https://github.com/ardanlabs/conf). The package supports both environment variables and command line arguments. Now we can opt-out of docker if we want a more idiomatic Go API development workflow. I copied and pasted the package directly under: `api/internal/platform/conf`.
+In Part 1, API configuration was dependent on docker secret values, making it hard to opt-out of docker in development. Furthermore, there was no mechanism for retrieving non-secret configuration values. A better approach would be to reserve docker secrets for production and adopt the [Ardan Labs configuration package](https://github.com/ardanlabs/conf). This package supports both environment variables and command line arguments. Now we can opt-out of docker if we want a more idiomatic Go API development workflow. I copied and pasted the package directly under: `api/internal/platform/conf`.
 
 The package takes struct fields and translates them to cli flags and environment variables. The struct field `cfg.Web.Production` in cli form would be `--web-production`. But in environment variable form it is `API_WEB_PRODUCTION`. Notice as an environment variable there's an extra namespace. This ensures we only parse the variables we expect. This also reduces name conflicts. In our case that namespace is `API`.
 
@@ -110,7 +112,9 @@ var cfg struct {
 }
 ```
 
-The configuration package requires a nested struct describing the configuration fields. Each field has a type and default value supplied in a struct tag. The `noprint` value in the struct tag is used to omit data from being printed. Next we parse the arguments, as environment variables or command line flags:
+The configuration package requires a nested struct describing the configuration fields. Each field has a _type_ and can be customized by the format string called a _[struct tag](https://www.digitalocean.com/community/tutorials/how-to-use-struct-tags-in-go)_. Struct tags allow us to supply a _default_ value. The `noprint` value in the struct tag is used to omit data from being printed.
+
+`conf.Parse()` parses any passed environment variables or command line flags into the provided struct. It takes in [os.Args](https://gobyexample.com/command-line-arguments) to access command-line arguments, a namespace, and a config struct to store the values. If there's a `ErrHelpWanted` error we reveal usage instructions.
 
 ```go
 // api/cmd/api/main.go
@@ -118,87 +122,77 @@ if err := conf.Parse(os.Args[1:], "API", &cfg); err != nil {
   if err == conf.ErrHelpWanted {
     usage, err := conf.Usage("API", &cfg)
     if err != nil {
-      log.Fatalf("error : generating config usage : %v", err)
+      return errors.Wrap(err, "generating config usage")
     }
     fmt.Println(usage)
-    return
+    return nil
   }
-  log.Fatalf("error: parsing config: %s", err)
+  return errors.Wrap(err, "parsing config")
 }
 ```
 
-If there's a `ErrHelpWanted` error we reveal usage instructions. Here's the configuration fields applied in the docker-compose file with the API namespace:
+The following snippet shows the environment variable form of configuration struct fields:
 
 ```yaml
 # docker-compose.yml
-services:
-  api:
-    build:
-      context: ./api
-      target: dev
-    container_name: api
-    environment:
-      CGO_ENABLED: 0
-      API_DB_HOST: db
-      API_WEB_PRODUCTION: "false"
-      API_WEB_ADDRESS: :$API_PORT
-      API_WEB_READ_TIMEOUT: 7s
-      API_WEB_WRITE_TIMEOUT: 7s
-      API_WEB_SHUTDOWN_TIMEOUT: 7s
-      API_WEB_FRONTEND_ADDRESS: https://localhost:$CLIENT_PORT
-    ports:
-      - $API_PORT:$API_PORT
+environment:
+  CGO_ENABLED: 0
+  API_DB_HOST: db
+  API_DB_DISABLE_TLS: "true"
+  API_WEB_PRODUCTION: "false"
+  API_WEB_ADDRESS: :$API_PORT
+  API_WEB_DEBUG: :$PPROF_PORT
+  API_WEB_READ_TIMEOUT: 7s
+  API_WEB_WRITE_TIMEOUT: 7s
+  API_WEB_SHUTDOWN_TIMEOUT: 7s
+  API_WEB_FRONTEND_ADDRESS: $API_WEB_FRONTEND_ADDRESS
 ```
 
-When necessary we may abstract some environment variables into a centralized location and pull them in. When an `.env` file exists in the same directory as the docker-compose file, we can reference the variables. To do this, prefix a dollar sign before an environment variable name like `$API_PORT`. This allows for better maintenance of default values when values are referenced outside the program in multiple places.
+When necessary we may abstract some environment variables into a centralized location and pull them in. When an `.env` file exists in the same directory as the docker-compose file, we can reference the variables inside it. To do this, prefix a dollar sign before the environment variable name: `$API_PORT`. This allows for better maintenance of default values when values are referenced in multiple places.
 
-For example, both the Makefile and the docker-compose file take advantage of the following `.env` file:
+For example, here's the `.env.sample` file:
 
 ```makefile
 # .env
-
 # ENVIRONMENT VARIABLES
 
 API_PORT=4000
 PPROF_PORT=6060
 CLIENT_PORT=3000
 
-POSTGRES_DB=postgres
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_HOST=db
-POSTGRES_NET=postgres-net
+DB_URL=postgres://postgres:postgres@db:5432/postgres?sslmode=disable
 
-REACT_APP_BACKEND=https://localhost:4000/v1
+REACT_APP_BACKEND=http://localhost:4000/v1
 API_WEB_FRONTEND_ADDRESS=https://localhost:3000
 ```
 
 ## Database Connection
 
-The database package has an important function named `NewRepository()`. It takes the necessary database configuration values as arguments and returns a `Repository` struct containing
-the database connection pointer, a query builder named [Squirrel](https://github.com/Masterminds/squirrel) and a URL struct representing a parsed URL.
+The database package has a function called `database.NewRepository()`. Which takes in a copy of the `database.Config{}` struct as an argument and returns a `*Repository` pointer containing:
+the database pointer, a query builder named [Squirrel](https://github.com/Masterminds/squirrel) and a URL struct that can be used to retrieve the conection string.
 
 ```go
 // api/cmd/internal/platform/database/database.go
+type Config struct {
+  User       string
+  Password   string
+  Host       string
+  Name       string
+  DisableTLS bool
+}
+
 type Repository struct {
-	DB  *sqlx.DB
-	SQ  squirrel.StatementBuilderType
-	URL url.URL
+  DB  *sqlx.DB
+  SQ  squirrel.StatementBuilderType
+  URL url.URL
 }
 ```
 
-I kept the URL struct around for convenience to reveal the connection string on demand: `URL.String()`. For example, here's how we make a database connection.
-
-```go
-// api/cmd/internal/platform/database/database.go
-db, err := sqlx.Open("postgres", u.String())
-```
-
-After creating a new repository we immediately handle any error connecting and use a `defer` statement to close the connection when the surrounding function returns since we are done with it.
+After creating a new repository we immediately handle any error connecting and use a `defer` statement to clean up and close the connection when the surrounding function returns.
 
 ```go
 // api/cmd/api/main.go
-repo, err := database.NewRepository(database.Config{
+repo, close, err := database.NewRepository(database.Config{
   User:       cfg.DB.User,
   Host:       cfg.DB.Host,
   Name:       cfg.DB.Name,
@@ -208,7 +202,7 @@ repo, err := database.NewRepository(database.Config{
 if err != nil {
   return errors.Wrap(err, "connecting to db")
 }
-defer repo.Close()
+defer close()
 ```
 
 ## Docker Secrets
@@ -235,7 +229,7 @@ if cfg.Web.Production {
 
 To handle secrets I'm using a slightly modified version of a [secrets package](https://github.com/ijustfool/docker-secrets) I found on the internet. It's located under: `api/pkg/secrets/secrets.go`
 
-The `NewDockerSecrets()` method reads all the secrets located in the secrets directory. By default that's /run/secrets. Then it creates a mapping that can be accessed by the `Get` method. More on Docker secrets when we get to production (discussed in Part 4, _"Docker Swarm and Traefik"_).
+The `secrets.NewDockerSecrets()` method reads all the secrets located in the secrets directory. By default that's /run/secrets. Then it creates a mapping that can be accessed by the `Get` method. More on Docker secrets when we get to production (discussed in Part 7, _"Docker Swarm and Traefik"_).
 
 ## Graceful Shutdown
 
@@ -243,18 +237,10 @@ With production services you shouldn't immediately shutdown when an error occurs
 
 ![](/media/graceful-shutdown.png)
 
-First thing to do is handle potential server errors separately from interrupt and termination signals perhaps caused by the operating system or even Docker Engine (when we deploy). When a server error occurs it will do so immediately and in these cases we don't want to gracefully shutdown. If the server can't start then we should shutdown immediately. We capture server errors when the api listens and serves.
+First thing to do is handle potential server errors separately from interrupt and termination signals perhaps caused by the operating system or from Docker Engine killing an unhealthy service due to a series of failed Healthchecks. When a server error occurs it will do so immediately and in these cases we don't want to gracefully shutdown. If the server can't start then we should shutdown immediately. We capture server errors when the api listens and serves.
 
 ```go
 // api/cmd/api/main.go
-var discardLog *log.Logger
-
-if !cfg.Web.Production {
-  // hide "tls: unknown certificate" errors due to self-signed certificates
-  // In development prevent the server from logging errors on its own
-  discardLog = log.New(ioutil.Discard, "", 0)
-}
-
 shutdown := make(chan os.Signal, 1)
 
 api := http.Server{
@@ -262,7 +248,7 @@ api := http.Server{
   Handler:      handlers.API(shutdown, repo, infolog, cfg.Web.FrontendAddress),
   ReadTimeout:  cfg.Web.ReadTimeout,
   WriteTimeout: cfg.Web.WriteTimeout,
-  ErrorLog:     discardLog,
+  ErrorLog:     log.New(ioutil.Discard, "", 0), // Hides "tls: unknown certificate" errors caused by self-signed certificates
 }
 
 serverErrors := make(chan error, 1)
@@ -427,28 +413,7 @@ func API(shutdown chan os.Signal, repo *database.Repository, log *log.Logger, Fr
 [explain]
 
 ```go
-package web
-
-import (
-  "context"
-  "log"
-  "net/http"
-  "os"
-  "syscall"
-  "time"
-
-  "github.com/go-chi/chi"
-)
-
-type ctxKey int
-
-const KeyValues ctxKey = 1
-
-type Values struct {
-  StatusCode int
-  Start      time.Time
-}
-
+// api/internal/platform/web/web.go
 type Handler func(http.ResponseWriter, *http.Request) error
 
 type App struct {
@@ -457,7 +422,22 @@ type App struct {
   mw       []Middleware
   shutdown chan os.Signal
 }
+```
 
+```go
+// api/internal/platform/web/web.go
+type ctxKey int
+
+const KeyValues ctxKey = 1
+
+type Values struct {
+  StatusCode int
+  Start      time.Time
+}
+```
+
+```go
+// api/internal/platform/web/web.go
 func NewApp(shutdown chan os.Signal, logger *log.Logger, mw ...Middleware) *App {
   return &App{
     log:      logger,
@@ -466,7 +446,9 @@ func NewApp(shutdown chan os.Signal, logger *log.Logger, mw ...Middleware) *App 
     shutdown: shutdown,
   }
 }
+```
 
+```go
 func (a *App) Handle(method, url string, h Handler) {
 
   h = wrapMiddleware(a.mw, h)
@@ -495,11 +477,6 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   w.Header().Set("Content-Type", "application/json")
   a.mux.ServeHTTP(w, r)
 }
-
-func (a *App) SignalShutdown() {
-  a.log.Println("error returned from handler indicated integrity issue, shutting down service")
-  a.shutdown <- syscall.SIGSTOP
-}
 ```
 
 ### Route Handlers
@@ -524,6 +501,32 @@ func (p *Products) Create(w http.ResponseWriter, r *http.Request) error {
 ### Request Validation
 
 [explain]
+
+```go
+type FieldError struct {
+  Field string `json:"field"`
+  Error string `json:"error"`
+}
+
+type ErrorResponse struct {
+  Error  string       `json:"error"`
+  Fields []FieldError `json:"fields,omitempty"`
+}
+
+type Error struct {
+  Err    error
+  Status int
+  Fields []FieldError
+}
+
+func NewRequestError(err error, status int) error {
+  return &Error{Err: err, Status: status}
+}
+
+func (e *Error) Error() string {
+  return e.Err.Error()
+}
+```
 
 ```go
 func Decode(r *http.Request, val interface{}) error {
@@ -620,34 +623,6 @@ Errors get bubbled up to the main.go file. The run function is the only place in
 [explain]
 
 ```go
-package web
-
-import "github.com/pkg/errors"
-
-type FieldError struct {
-  Field string `json:"field"`
-  Error string `json:"error"`
-}
-
-type ErrorResponse struct {
-  Error  string       `json:"error"`
-  Fields []FieldError `json:"fields,omitempty"`
-}
-
-type Error struct {
-  Err    error
-  Status int
-  Fields []FieldError
-}
-
-func NewRequestError(err error, status int) error {
-  return &Error{Err: err, Status: status}
-}
-
-func (e *Error) Error() string {
-  return e.Err.Error()
-}
-
 type shutdown struct {
   Message string
 }
@@ -756,75 +731,13 @@ The signal is received at the the other end of the shutdown channel and handled 
 
 ## Seeding & Migrations
 
-Migrations can be performed in 2 ways: through a cli application and or the Makefile. Both implementations make use of [go-migrate](https://github.com/golang-migrate/migrate). The only difference is the Makefile leverages a [Docker image](https://hub.docker.com/r/migrate/migrate/). The Makefile implementation is for convenience since we are already adopting a Makefile workflow. The APIs use of the code implementation is out of necessity so that integration tests can perform seeding and migrations as well against a temporary test database.
+Migrations can be performed in 2 ways: through code and or via docker-compose. Both implementations make use of [go-migrate](https://github.com/golang-migrate/migrate). The only difference is the docker-compose.yml file leverages a [Docker image](https://hub.docker.com/r/migrate/migrate/). The docker-compose implementation is for convenience since we are already adopting a docker-compose workflow. The APIs use of the code implementation is out of necessity so that integration tests can perform seeding and migrations as well against a temporary test database.
 
 ![](/media/seeds.gif)
 
 ### Seeding & Migrating With The CLI
 
-The CLI implementation is takes the go-migrate library and applies its methods from a switch case. We can seed and migrate up to the latest version.
-
-[explain]
-
-```go
-// api/internal/schema/migrate.go
-const dest = "/migrations"
-
-func Migrate(dbname string, url string) error {
-  src := fmt.Sprintf("file://%s%s", RootDir(), dest)
-  m, err := migrate.New(src, url)
-  if err != nil {
-    log.Fatal(err)
-  }
-  if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-    log.Fatal(err)
-  }
-  return nil
-}
-```
-
-[explain]
-
-```go
-// api/internal/schema/seed.go
-const folder = "/seeds/"
-const ext = ".sql"
-
-func Seed(db *sqlx.DB, filename string) error {
-  tx, err := db.Beginx()
-  if err != nil {
-    return err
-  }
-  src := fmt.Sprintf("%s%s%s%s", RootDir(), folder, filename, ext)
-  dat, err := ioutil.ReadFile(src)
-  if err != nil {
-    return err
-  }
-  if _, err := tx.Exec(string(dat)); err != nil {
-    if err := tx.Rollback(); err != nil {
-      return err
-    }
-    return err
-  }
-  return tx.Commit()
-}
-```
-
-[explain]
-
-```go
-// api/internal/schema/path.go
-var (
-  _, b, _, _ = runtime.Caller(0)
-  basepath   = filepath.Dir(b)
-)
-
-func RootDir() string {
-  return basepath
-}
-```
-
-[explain]
+The admin application found under `api/cmd/admin`, uses the code implementation. The application takes the go-migrate library and applies its methods from a switch case.
 
 ```go
 // api/cmd/admin/main.go
@@ -851,129 +764,88 @@ fmt.Println("commands: migrate|seed <filename>")
 return nil
 ```
 
-With this code the both the admin cli `application api/cmd/admin/main.go` and `api/cmd/api/tests/products_tests.go` can seed and migrate.
+Both the admin application and the main application tests `api/cmd/api/tests` make use of this code to seed and migrate internally. At it's current state it is however limited. We cannot migrate down for example. Now we could easily extend this, but the docker-compose.override.yml takes care of all our seeding and migrations use cases including forcing a migration upon error.
 
-### Seeding & Migrating With The Makefile
+### Seeding & Migrating With Docker Compose
 
-From the container perspective [usage](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate#usage) of go-migrate is straight forward because it uses the same cli interface as the regular library.
+Here's the docker-compose.override.yml file in full:
 
-Here's how we can create a migration:
+```yml
+# docker-compose.override.yml
+version: "2.4"
 
-```makefile
-docker run \
---volume $(pwd)/api/internal/schema/migrations:/migrations \
---network postgres-net migrate/migrate create
--ext sql \
--dir /migrations \
--seq create_users_table
+volumes:
+  data:
+
+networks:
+  postgres-net:
+
+services:
+  db:
+    image: postgres:11.6
+    container_name: db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      start_period: 30s
+    ports:
+      - 5432:5432
+    volumes:
+      - ./api/internal/schema/seeds:/seed
+      - data:/var/lib/postgresql/data
+    networks:
+      - postgres-net
+
+  debug-db:
+    image: dencold/pgcli
+    environment:
+      DB_URL: $DB_URL
+    networks:
+      - postgres-net
+
+  migration:
+    image: migrate/migrate
+    entrypoint: migrate create -ext sql -dir /migrations -seq
+    volumes:
+      - ./api/internal/schema/migrations:/migrations
+    networks:
+      - postgres-net
+
+  version:
+    image: migrate/migrate
+    command: -path /migrations -database $DB_URL version
+    volumes:
+      - ./api/internal/schema/migrations:/migrations
+    networks:
+      - postgres-net
+
+  up:
+    image: migrate/migrate
+    entrypoint: migrate -path /migrations -verbose -database $DB_URL up
+    volumes:
+      - ./api/internal/schema/migrations:/migrations
+    networks:
+      - postgres-net
+
+  down:
+    image: migrate/migrate
+    entrypoint: migrate -path /migrations -verbose -database $DB_URL down
+    volumes:
+      - ./api/internal/schema/migrations:/migrations
+    networks:
+      - postgres-net
+
+  # A migration script can fail because of invalid syntax in sql files. http://bit.ly/2HQHx5s
+  force:
+    image: migrate/migrate
+    entrypoint: migrate -path /migrations -verbose -database $DB_URL force
+    volumes:
+      - ./api/internal/schema/migrations:/migrations
+    networks:
+      - postgres-net
 ```
 
-The Makefile implementation makes use of variables, args and syntactic sugar to allow the client code to look like this:
-
-```bash
-make migration <name>
-```
-
-Instead of this:
-
-```bash
-make migrations name=<name>
-```
-
-This cleaner syntax is possible by comparing the values found in `MAKECMDGOALS` at runtime. If the first word matches (migration, seed, or insert) we interpret the second word as the argument for the command and stored the value in a variable.
-
-```makefile
-# store the name argument
-ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),migration seed insert))
-  name := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  $(eval $(name):;@:)
-endif
-
-# store the number argument
-ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),up down force))
-  num := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
-  $(eval $(num):;@:)
-  ifndef num
-    ifeq ($(firstword $(MAKECMDGOALS)),$(filter $(firstword $(MAKECMDGOALS)),down))
-      num := 1
-    endif
-  endif
-endif
-```
-
-The advantage of using the makefile versus the cli admin application is that you can migrate up and down.
-
-```makefile
-# makefile
-migration:
-  ifndef name
-    $(error migration name is missing -> make migration <name>)
-  endif
-
-  # [ generating migration files ... ]
-  docker run \
-  --volume $(MIGRATIONS_VOLUME) \
-  --network $(POSTGRES_NET) migrate/migrate \
-  create \
-  -ext sql \
-  -dir /migrations \
-  -seq $(name)
-
-up:
-  # [ migrating up ... ]
-  docker run \
-  --volume $(MIGRATIONS_VOLUME) \
-  --network $(POSTGRES_NET) migrate/migrate \
-  -path /migrations \
-  -verbose \
-  -database $(URL) up $(num)
-
-down:
-  # [ migrating down ... ]
-  docker run \
-  --volume $(MIGRATIONS_VOLUME) \
-  --network $(POSTGRES_NET) migrate/migrate \
-  -path /migrations  \
-  -verbose \
-  -database $(URL) down $(num)
-```
-
-Seeding the database is composed of three steps.
-
-1. Generating a seed file
-2. Adding SQL to that file, and then
-3. Inserting it in the database.
-
-```bash
-make seed <name>
-```
-
-As soon as you create a seed file you are expected to add SQL to the generated file before you insert.
-
-```bash
-make insert <name>
-```
-
-```makefile
-# makefile
-seed:
-  ifndef name
-    $(error seed name is missing -> make insert <name>)
-  endif
-  # [ generating seed file ... ]
-  mkdir -p $(PWD)/$(SEED_DIR)
-  touch $(PWD)/$(SEED_DIR)/$(name).sql
-
-insert:
-  ifndef name
-  $(error seed filename is missing -> make insert <filename>)
-  endif
-  # [ inserting $(name) seed data ... ]
-  docker cp $(PWD)/$(SEED_DIR)/$(name).sql $(shell docker-compose ps -q db):/seed/$(name).sql \
-  && docker exec -u root db psql $(POSTGRES_DB) $(POSTGRES_USER) -f /seed/$(name).sql
-```
-
-You will see seeding and migrations in action in the demo. For further reference checkout out this [PostgreSQL tutorial](https://github.com/golang-migrate/migrate/blob/master/database/postgres/TUTORIAL.md) from go-migrate.
+[explain]
 
 ## Integration Testing
 
@@ -1004,4 +876,6 @@ pgc, err := tc.GenericContainer(ctx, tc.GenericContainerRequest{
 
 # Conclusion
 
-We saw that project structure can be tricky in Go. Top level packages in the project can be used and depended on in other projects. Somethings don't need to be reusable. Leverage the internal folder to hide code from external projects and identify your business logic from the non-business domain logic. When considering bewteen frameworks, consider creating your own. The benefit of doing so is that you know what it does because you built it. Try to avoid creating black boxes in software. Choosing an ORM as abstraction layer is creating a black box in your data access layer which can come back to haunt you later. The less abstraction layers you have the more transparent your architecture will be. In the [next post](ultimate-go-react-development-setup-with-docker-part4) I demonstrate the API workflow during development.
+We saw that project structure can be tricky in Go. Top level packages in the project can be used and depended on in other projects. Somethings don't need to be reusable. Leverage the internal folder to hide code from external projects and identify your business logic from the non-business domain logic. When considering bewteen frameworks, consider creating your own. The benefit of doing so is that you know what it does because you built it. Try to avoid creating black boxes in software. Choosing an ORM as abstraction layer is creating a black box in your data access layer which can come back to haunt you later. The less abstraction layers you have the more transparent your architecture will be.
+
+In the [next post](ultimate-go-react-development-setup-with-docker-part4) I demonstrate the API workflow during development. There's no makefile this time. We'll use docker-compose.

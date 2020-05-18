@@ -39,15 +39,15 @@ We focus on:
 
 ## Getting Started
 
-Clone the project repo and checkout `part2`.
+Clone the project repo and checkout `part3`.
 
 ```bash
 git clone https://github.com/ivorscott/go-delve-reload
 cd go-delve-reload
-git checkout part2
+git checkout part3
 ```
 
-Please review [Setting Up VSCode](https://blog.ivorscott.com/ultimate-go-react-development-setup-with-docker#setting-up-vscode) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
+Please review [Setting Up VSCode](/ultimate-go-react-development-setup-with-docker#setting-up-vscode) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
 
 ## The Goal
 
@@ -71,6 +71,8 @@ API_WEB_FRONTEND_ADDRESS=https://localhost:3000
 ```
 
 ## Step 2) Unblock port 5432 for Postgres
+
+Kill any application that might be using the postgres port on your host machine.
 
 ## Step 3) Create self-signed certificates
 
@@ -206,9 +208,11 @@ docker-compose exec db psql postgres postgres -f /seed/products.sql
 
 ![](/media/insert.png)
 
-Great, now the database is ready! The output should be `INSERT 0 3`. The 3 represents the 3 rows inserted. You can ignore the 0 representing [OIDS](https://www.postgresql.org/message-id/4AD5F063.8050708@iol.ie).
+Great! Now the database is ready. The output should be `INSERT 0 3`. The 3 represents the 3 rows inserted.
 
-Enter the database and examine its state.
+<!-- You can ignore the 0 representing [OIDS](https://www.postgresql.org/message-id/4AD5F063.8050708@iol.ie). -->
+
+Now, let's enter the database and examine its state.
 
 ```makefile
 docker-compose run debug-db
@@ -218,28 +222,37 @@ docker-compose run debug-db
 
 ## Step 5) Run the frontend and backend
 
+If you run the following commands in separate windows you can preserve the initial api output (create-react-app clears the terminal otherwise)
+
 ```bash
-docker-compose up api client
+docker-compose up api
+docker-compose up client
 ```
 
 ![run containers](/media/run.png "run containers")
 
-First, navigate to the API in the browser at: <https://localhost:4000/v1/products>.
+Or run in one command.
 
-Then navigate to the client app at: <https://localhost:3000> in a separate tab.
+```bash
+docker-compose up api client
+```
+
+Navigate to the API in the browser at: <https://localhost:4000/v1/products>.
 
 _**Note:**_
 _To replicate the production environment as much as possible locally, we use self-signed certificates. In your browser, you may see a warning and need to click a link to proceed to the requested page. This is common when using self-signed certificates._
+
+Then navigate to the client app at: <https://localhost:3000> in a separate tab.
 
 ![](/media/demo.png)
 
 ## Step 6) Run unit and integration tests
 
-Along with unit tests, our tests setup a temporary postgres database for testing. Under the hood it's using Docker programmatically.
+In addition to unit tests, the integration tests setup a temporary postgres database with the testcontainers-go library. Under the hood testcontainers uses Docker programmatically.
 
 ```bash
 cd api
-go test ./...
+go test -v ./...
 ```
 
 ![](/media/test.png)
@@ -313,13 +326,14 @@ Or view a visualization by typing `web` into the pprof command prompt which will
 
 ![simple right?](/media/notreally.gif)
 
-Nope! Profiling shouldn't be an frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise in memory causing an application to run slow.
+Nope! I still have a lot to learn but I find pprof and [continuous profiling](https://github.com/profefe/profefe) very interesting. To learn more checkout [Debugging performance issues in Go programs](https://github.com/golang/go/wiki/Performance).
 
 ## Conclusion
 
-This demonstration included seeding and migrations to handle a growing postgres database. We went from no database, to an empty one, to a seeded one, using a makefile workflow. Running the API with `make api` still uses docker-compose and live reload (like in Part 1). But now we can opt-out of live reload and containerizing the API in development with `go run ./cmd/api`, optionally supplying cli flags or exported environment variables.
+This demonstration included seeding and migrations to handle a growing postgres database. We went from no database, to an empty one, to a seeded one, using a makefile workflow. Running the API still uses docker-compose and live reload (like in Part 1). But now there's no makefile and we can opt-out of live reload and containerizing the API all together in development with `go run ./cmd/api`, optionally supplying cli flags or exported environment variables.
 
 During testing, we programmatically created a temporary database. In the background, the test database leveraged the same seeding and migration functionality we saw earlier. This enables our tests to set things up before they run.
 
-Lastly, we got a glimpse at what profiling a Go API looks like. [summarize]
+Lastly, we got a glimpse at what profiling a Go API looks like. Profiling shouldn't be a frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise.
+
 In the [next post](ultimate-go-react-development-setup-with-docker-part5) I discuss the OAuth 2 with Auth0 in Go.
