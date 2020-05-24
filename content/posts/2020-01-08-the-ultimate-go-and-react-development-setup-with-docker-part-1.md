@@ -1261,4 +1261,4 @@ In January I attended GoDays 2020 in Berlin. There was a wonderful presentation 
 
 I hope you've learned a bunch about how you can build the ultimate Go and React development setup with Docker. No matter what language you use on the client or server side, the basic principles still apply. Enjoy improving your own developer workflow. Happy Coding.
 
-The [next post](ultimate-go-react-development-setup-with-docker-part2) in the series is _Transitioning to Go pt.2_
+_The [next post](ultimate-go-react-development-setup-with-docker-part2) in the series is Transitioning to Go pt.2_

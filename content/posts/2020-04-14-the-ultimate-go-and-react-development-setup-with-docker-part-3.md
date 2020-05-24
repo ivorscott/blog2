@@ -1,7 +1,7 @@
 ---
 template: post
-title: My API Workflow with Go pt.4
-slug: ultimate-go-react-development-setup-with-docker-part4
+title: My API Workflow with Go pt.3
+slug: ultimate-go-react-development-setup-with-docker-part3
 draft: false
 date: 2020-04-14T9:10:15.296Z
 description: >-
@@ -23,7 +23,7 @@ socialImage: "/media/part4.jpg"
 
 # Introduction
 
-[Part 3](/ultimate-go-react-development-setup-with-docker-part3) was about building a production ready API in Go and wrapping docker tooling around it. This post covers the new API workflow. I'll share a demo demonstrating the new development workflow for the updated service and how to profile it.
+[Part 2](/ultimate-go-react-development-setup-with-docker-part2) was about transitioning to Go. This post contains a demo of my production ready API. The demo is really my development workflow that involves seeding and migrations. After the demo I'll end with how to profile the API with [pprof](https://golang.org/pkg/runtime/pprof/).
 
 We focus on:
 
@@ -47,7 +47,7 @@ cd go-delve-reload
 git checkout part3
 ```
 
-Please review [Setting Up VSCode](/ultimate-go-react-development-setup-with-docker#setting-up-vscode) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
+Please review [Setting Up VSCode](/ultimate-go-react-development-setup-with-docker#go-modules) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
 
 ## The Goal
 
@@ -326,7 +326,7 @@ Or view a visualization by typing `web` into the pprof command prompt which will
 
 ![simple right?](/media/notreally.gif)
 
-Nope! I still have a lot to learn but I find pprof and [continuous profiling](https://github.com/profefe/profefe) very interesting. To learn more checkout [Debugging performance issues in Go programs](https://github.com/golang/go/wiki/Performance).
+Nope! I'm still wrapping my head around profiling in Go but I find pprof and [continuous profiling](https://github.com/profefe/profefe) very interesting. To learn more checkout [debugging performance issues in Go programs](https://github.com/golang/go/wiki/Performance).
 
 ## Conclusion
 
@@ -336,4 +336,4 @@ During testing, we programmatically created a temporary database. In the backgro
 
 Lastly, we got a glimpse at what profiling a Go API looks like. Profiling shouldn't be a frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise.
 
-In the [next post](ultimate-go-react-development-setup-with-docker-part5) I discuss the OAuth 2 with Auth0 in Go.
+In the [next post](ultimate-go-react-development-setup-with-docker-part4) I discuss the API implementation.

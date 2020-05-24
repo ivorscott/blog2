@@ -1,9 +1,9 @@
 ---
 template: post
-title: OAuth 2 with Auth0 in Go pt.5
-slug: ultimate-go-react-development-setup-with-docker-part5
-draft: false
-date: 2020-05-14T9:10:15.296Z
+title: OAuth 2 with Auth0 in Go pt.7
+slug: ultimate-go-react-development-setup-with-docker-part7
+draft: true
+date: 2020-07-14T9:10:15.296Z
 description: >-
 
 category: "Go and React Series"
@@ -23,7 +23,7 @@ socialImage: "/media/part5.jpg"
 
 # Introduction
 
-[Part 4](/ultimate-go-react-development-setup-with-docker-part4) shared an optimized API workflow with seeding and migrations.
+[Part 6](/ultimate-go-react-development-setup-with-docker-part6) shared a CICD approach with Drone and Portainer.
 
 We focus on:
 

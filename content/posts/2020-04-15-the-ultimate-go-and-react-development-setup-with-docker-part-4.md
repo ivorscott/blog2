@@ -1,9 +1,9 @@
 ---
 template: post
-title: Building an API with Go pt.3
-slug: ultimate-go-react-development-setup-with-docker-part3
+title: Building an API with Go pt.4
+slug: ultimate-go-react-development-setup-with-docker-part4
 draft: false
-date: 2020-03-23T10:55:15.296Z
+date: 2020-04-15T10:55:15.296Z
 description: >-
   How do you build an production ready Go API? What components matter?
 category: "Go and React Series"
@@ -23,7 +23,7 @@ socialImage: "/media/part3.jpg"
 
 # Introduction
 
-This post builds upon the previous posts. It covers building a production ready API. My API is an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I added cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. Similar to Part 1, running the API container allows live reloading, but now this behavior is optional. This tweet influenced my descision:
+[Part 3](/ultimate-go-react-development-setup-with-docker-part3) was about an API development workflow that involved seeding and migrations. This post covers that API's implementation and how I wrapped docker tooling around it. My API is an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I added cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. Similar to Part 1, running the API container allows live reloading, but now this behavior is optional. This tweet influenced my descision:
 
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Folks, keep docker out of your edit/compile/test inner loop.</p>&mdash; Dave Cheney (@davecheney) <a href="https://twitter.com/davecheney/status/1232078682287591425?ref_src=twsrc%5Etfw">February 24, 2020</a></blockquote>
 
@@ -878,4 +878,4 @@ pgc, err := tc.GenericContainer(ctx, tc.GenericContainerRequest{
 
 We saw that project structure can be tricky in Go. Top level packages in the project can be used and depended on in other projects. Somethings don't need to be reusable. Leverage the internal folder to hide code from external projects and identify your business logic from the non-business domain logic. When considering bewteen frameworks, consider creating your own. The benefit of doing so is that you know what it does because you built it. Try to avoid creating black boxes in software. Choosing an ORM as abstraction layer is creating a black box in your data access layer which can come back to haunt you later. The less abstraction layers you have the more transparent your architecture will be.
 
-In the [next post](ultimate-go-react-development-setup-with-docker-part4) I demonstrate the API workflow during development. There's no makefile this time. We'll use docker-compose.
+In the [next post](ultimate-go-react-development-setup-with-docker-part5) I discuss the OAuth 2 with Auth0 in Go.

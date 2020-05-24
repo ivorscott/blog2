@@ -1,15 +1,15 @@
 ---
 template: post
-title: CICD with Portainer and Drone pt.8
-slug: ultimate-go-react-development-setup-with-docker-part8
+title: Deploying with Swarm and Traefik pt.5
+slug: ultimate-go-react-development-setup-with-docker-part5
 draft: false
-date: 2020-08-14T9:10:15.296Z
+date: 2020-05-13T9:10:15.296Z
 description: >-
 
 category: "Go and React Series"
 tags:
-  - Docker Golang React Swarm Traefik Portainer Drone CI
-socialImage: "/media/part8.jpg"
+  - Docker Golang Swarm Traefik
+socialImage: "/media/part7.jpg"
 ---
 
 <!-- PART OF A SERIES -->
@@ -19,17 +19,21 @@ socialImage: "/media/part8.jpg"
 </i>
 </center>
 
-![](/media/part8.jpg)
+![](/media/part7.jpg)
 
 # Introduction
 
-[Part 7](/ultimate-go-react-development-setup-with-docker-part7) was about deploying on a production Swarm with Traefik. This post covers CICD with Portainer and Drone CI.
+[Part 4](/ultimate-go-react-development-setup-with-docker-part4) the API implementation. This post covers deploying with Docker Swarm and Traefik.
 
 We focus on:
 
-- [Getting Started](#getting-started)
-- [Protainer](#protainer)
-- [Drone CI](#drone-ci)
+- [Digital Ocean](#digital-ocean)
+- [Docker Hub](#docker-hub)
+- [Docker Machine](#docker-machine)
+- [Docker Swarm](#swarm)
+- [Healthchecks](#healthchecks)
+- [Traefik](#traefik)
+- [Deployment](#deployment)
 
 ## Requirements
 
@@ -39,7 +43,9 @@ We focus on:
 - [Digital Ocean Account](https://m.do.co/c/12762445c6b3)
 - [Auth0 Account](https://auth0.com/)
 
-# Getting Started
+# Demo
+
+## Getting Started
 
 Clone the project repo and checkout `part7`.
 
@@ -51,6 +57,18 @@ git checkout part7
 
 Please review [Setting Up VSCode](/ultimate-go-react-development-setup-with-docker#setting-up-vscode) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
 
-# Protainer
+# Digital Ocean
 
-# Drone CI
+# Docker Hub
+
+# Docker Machine
+
+# Docker Swarm
+
+# Healthchecks
+
+# Traefik
+
+# Deployment
+
+In the [next post](/ultimate-go-react-development-setup-with-docker-part8) I discuss Continuos Integration and Continuous Delivery with Portainer and Drone CI.
