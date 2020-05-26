@@ -23,7 +23,7 @@ socialImage: "/media/part4.jpg"
 
 # Introduction
 
-[Part 2](/ultimate-go-react-development-setup-with-docker-part2) was about transitioning to Go. This post contains a demo of my production ready API. The demo is really my development workflow that involves seeding and migrations. After the demo I'll end with how to profile the API with [pprof](https://golang.org/pkg/runtime/pprof/).
+[Part 2](/ultimate-go-react-development-setup-with-docker-part2) was about transitioning to Go. This post contains a demo of a Docker-based API workflow inspired by the [Ardan Labs service example](https://github.com/ardanlabs/service). After the demo I'll end with how to profile the API with [pprof](https://golang.org/pkg/runtime/pprof/).
 
 We focus on:
 
@@ -47,7 +47,7 @@ cd go-delve-reload
 git checkout part3
 ```
 
-Please review [Setting Up VSCode](/ultimate-go-react-development-setup-with-docker#go-modules) to avoid intellisense errors in VSCode. This occurs because the Go module directory is not the project root.
+Please review [Setting Up VSCode](/ultimate-go-react-development-setup-with-docker#go-modules) to avoid intellisense errors in VSCode. This occurs because the project is a mono repo and the Go module directory is not the project root.
 
 ## The Goal
 
@@ -162,13 +162,13 @@ ALTER TABLE products
 DROP Column tags;
 ```
 
-We have 2 migrations but we yet to apply them. Migrate the database up to the latest migration.
+Cool, we have 2 migrations but we haven't used them yet. Migrate the database up to the latest migration.
 
 ```bash
 docker-compose run up # you can migrate down with "docker-compose run down"
 ```
 
-Now if we print out the selected migration version, it should render `2`, the number of total migrations.
+Now if we checked the selected migration version, it should render `2`, the number of total migrations.
 
 ```bash
 docker-compose run version
@@ -222,7 +222,7 @@ docker-compose run debug-db
 
 ## Step 5) Run the frontend and backend
 
-If you run the following commands in separate windows you can preserve the initial api output (create-react-app clears the terminal otherwise)
+If you run the following commands in separate windows you can preserve the initial API output (create-react-app clears the terminal otherwise)
 
 ```bash
 docker-compose up api
@@ -248,7 +248,7 @@ Then navigate to the client app at: <https://localhost:3000> in a separate tab.
 
 ## Step 6) Run unit and integration tests
 
-In addition to unit tests, the integration tests setup a temporary postgres database with the testcontainers-go library. Under the hood testcontainers uses Docker programmatically.
+Integration tests run in addition to unit tests. During integration tests, a temporary Docker container is programtically created for Postgres, then automatically destroyed after tests run. Under the hood the integration tests make use of the [testcontainers-go](https://github.com/testcontainers/testcontainers-go).
 
 ```bash
 cd api
@@ -259,7 +259,7 @@ go test -v ./...
 
 ### Optional Step) Idiomatic Go development
 
-Containerizing to Go API is optional, so you can work with the API in an idiomatic fashion. This also means you can opt-out of live reloading. To configure the API, use command line flags or exported environment variables.
+Containerizing to Go API is optional, so you can work with the API in an idiomatic fashion. This also means you can opt-out of live reloading. When running the API normally use command line flags or exported environment variables. TLS encryption for the database is enabled by default and should be disabled in development.
 
 ```bash
 export API_DB_DISABLE_TLS=true
@@ -281,7 +281,7 @@ To measure how our programs are performing we use profiling. <i>The Go Programmi
 
 ![](/media/experiement.gif)
 
-Using pprof to measure an API, involves importing `net/http/pprof` the standard HTTP interface to profiling data. Since we don't use the import directly and just wish to use its side effects we place and \_ in front of the import. The import will register handlers under /debug/pprof/ using the DefaultServeMux. If you are not using the DefaultServeMux you need to register the handlers with the mux your are using. It's worth noting, that these handlers should not be accessible to the public because of this we use the DefaultServerMux on a dedicated port in a separate goroutine to leverage pprof.
+Using pprof to measure an API, involves importing `net/http/pprof` the standard HTTP interface to profiling data. Since we don't use the import directly and just wish to use its side effects we place an underscore in front of the import. The import will register handlers under /debug/pprof/ using the DefaultServeMux. If you are not using the DefaultServeMux you need to register the handlers with the mux your are using. It's worth noting, that these handlers should not be accessible to the public because of this we use the DefaultServerMux on a dedicated port in a separate goroutine to leverage pprof.
 
 ```go
 // api/cmd/api/main.go
@@ -294,7 +294,7 @@ go func() {
 }()
 ```
 
-In production, we won't expose the registered handlers pprof provides to Traefik. If we navigate to http://localhost:6060/debug/pprof/ we'll see something like this:
+In production, remember that publicly exposing the registered handlers pprof provides is a major security risk. Therefore, we either choose not to expose the profiling server to [Traefik](https://docs.traefik.io/) or ensure it's placed behind an authenticated endpoint. If we navigate to http://localhost:6060/debug/pprof/ we'll see something like this:
 
 ![](/media/pprof.png)
 
@@ -304,23 +304,23 @@ Some additional utilities you may want to install are an HTTP load generator lik
 brew install hey graphviz
 ```
 
-Then in one terminal you can make 10 concurrent connections to make 2000 requests to the api
+Then in one terminal you can make 10 concurrent connections to make 2000 requests to the API.
 
 ```bash
 hey -c 10 -n 2000 https://localhost:4000/v1/products
 ```
 
-While in another terminal, we leverage one of the register handlers setup by pprof. In the case, we want to capture a cpu profile for a duration of 10 seconds to measure the server activity.
+While in another terminal, we leverage one of the registered handlers setup by pprof. In the case, we want to capture a cpu profile for a duration of 10 seconds to measure the server activity.
 
 ```bash
 go tool pprof http://localhost:6060/debug/pprof/profile\?seconds\=10
 ```
 
-Afterward we can run the command `top -cum` (to sort by the fourth and fifth columns) to analyze the profile captured. The fourth and fifth columns indicate the number of samples that the function appeared in (while running or waiting for a function to return).
+Afterward we can run the command `top -cum` (this sorts entries based on their [cumulative value](https://github.com/google/pprof/blob/master/doc/README.md#options)) to analyze the profile captured. The fourth and fifth columns indicate the cumulative amount of time and percentage a function appeared in the samples (while running or waiting for a function to return).
 
 ![](/media/profiler.png)
 
-Or view a visualization by typing `web` into the pprof command prompt which will automatically open a web browser window.
+We can also view a visualization by typing `web` into the pprof command prompt which opens a browser window if we have graphviz installed.
 
 ![](/media/web.png)
 
@@ -330,10 +330,10 @@ Nope! I'm still wrapping my head around profiling in Go but I find pprof and [co
 
 ## Conclusion
 
-This demonstration included seeding and migrations to handle a growing postgres database. We went from no database, to an empty one, to a seeded one, using a makefile workflow. Running the API still uses docker-compose and live reload (like in Part 1). But now there's no makefile and we can opt-out of live reload and containerizing the API all together in development with `go run ./cmd/api`, optionally supplying cli flags or exported environment variables.
+This demonstration included seeding and migrations to handle a growing postgres database. We went from no database, to an empty one, to a seeded one, using a Docker-based workflow. Running the API in a container still uses live reload (like in Part 1). But now there's no makefile abstraction hiding the docker-compose commands. We also discovered we can opt-out of live reload and containerizing the API all together in development taking an idomatic Go approach with `go run ./cmd/api`, optionally supplying cli flags or exported environment variables.
 
-During testing, we programmatically created a temporary database. In the background, the test database leveraged the same seeding and migration functionality we saw earlier. This enables our tests to set things up before they run.
+While testing, we programmatically created a postgres container. In the background, our test database leveraged the same seeding and migration functionality we saw earlier. This enables the tests to set things up before they run. Since we used testcontainers-go any containers created are cleaned up afterwards.
 
 Lastly, we got a glimpse at what profiling a Go API looks like. Profiling shouldn't be a frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise.
 
-In the [next post](ultimate-go-react-development-setup-with-docker-part4) I discuss the API implementation.
+_In the [next post](ultimate-go-react-development-setup-with-docker-part4) I discuss the API implementation._
