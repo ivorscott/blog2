@@ -35,7 +35,7 @@ We focus on:
 
 ### 1. Many Tools Are Writtten In Go
 
-While deploying apps into the cloud I realized quite quickly that many of the tools I used were written in Go. Tools including [Drone](https://github.com/drone/drone), [Portainer](https://github.com/portainer/portainer), [Docker](https://github.com/moby/moby), [Kubernetes](https://github.com/kubernetes/kubernetes), [Terraform](https://github.com/hashicorp/terraform) and [Traefik](https://github.com/containous/traefik). I began to wonder: _What was I missing? What was so special about the langauge?_
+While deploying apps to the cloud I realized quite quickly that many of the tools I used were written in Go. Tools including [Drone](https://github.com/drone/drone), [Portainer](https://github.com/portainer/portainer), [Docker](https://github.com/moby/moby), [Kubernetes](https://github.com/kubernetes/kubernetes), [Terraform](https://github.com/hashicorp/terraform) and [Traefik](https://github.com/containous/traefik). I began to wonder: _What was I missing? What was so special about the langauge?_
 
 ### 2. Renowned Creators
 
@@ -59,7 +59,7 @@ Your code and its dependencies are compiled into a single static binary. Static 
 
 ### 7. Tooling and UX
 
-Go tooling provides many commands for many development concerns. To name a few, there's `go test` for testing, `go mod` for [module support](https://blog.golang.org/using-go-modules) and `go tool pprof` for code profiling).
+Go tooling provides many commands for many development concerns. To name a few, there's `go test` for testing, `go mod` for [module support](https://blog.golang.org/using-go-modules) and `go tool pprof` for code profiling.
 
 Even Ryan Dahl, the creator of Node and [Deno](https://deno.land/manual), abandoned Node for Go. Deno was originally written in Go before being [replaced with Rust](https://github.com/denoland/deno/issues/205) but the Go UX remained. For example `deno fmt` comes from `go fmt` which is a configure-less code formatter.
 
