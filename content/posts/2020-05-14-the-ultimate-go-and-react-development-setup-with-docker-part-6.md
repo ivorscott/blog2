@@ -2,14 +2,14 @@
 template: post
 title: CICD with Portainer and Drone pt.6
 slug: ultimate-go-react-development-setup-with-docker-part8
-draft: false
+draft: true
 date: 2020-05-14T9:10:15.296Z
 description: >-
 
 category: "Go and React Series"
 tags:
   - Docker Golang React Swarm Traefik Portainer Drone CI
-socialImage: "/media/part8.jpg"
+socialImage: "/media/part6.jpg"
 ---
 
 <!-- PART OF A SERIES -->
@@ -19,7 +19,7 @@ socialImage: "/media/part8.jpg"
 </i>
 </center>
 
-![](/media/part8.jpg)
+![](/media/part6.jpg)
 
 # Introduction
 

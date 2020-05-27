@@ -21,7 +21,7 @@ socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 
 ![matthew-sleeper-kn8atn5_zgq-unsplash.jpg](/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg)
 
-_Updated: January 29th, 2020_
+_Updated: May 27th, 2020_
 
 # Introduction
 
@@ -1259,6 +1259,6 @@ In January I attended GoDays 2020 in Berlin. There was a wonderful presentation 
 
 # Conclusion
 
-I hope you've learned a bunch about how you can build the ultimate Go and React development setup with Docker. No matter what language you use on the client or server side, the basic principles still apply. I highly recommend Bret Fisher's [Docker Mastery course](https://www.udemy.com/course/docker-mastery) on Udemy if you want to learn Docker from a real Docker Captain. Enjoy improving your own developer workflow. Happy Coding.
+I hope you've learned a bunch about how you can build the ultimate Go and React development setup with Docker. No matter what language you use on the client or server side, the basic principles still apply. I highly recommend Bret Fisher's [Docker Mastery course](https://www.udemy.com/course/docker-mastery) on Udemy if you want to learn Docker from a real Docker Captain. Happy Coding.
 
 _The [next post](ultimate-go-react-development-setup-with-docker-part2) in the series is Transitioning to Go pt.2_

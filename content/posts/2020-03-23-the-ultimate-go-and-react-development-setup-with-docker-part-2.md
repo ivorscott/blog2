@@ -3,7 +3,7 @@ template: post
 title: Transitioning to Go pt.2
 slug: ultimate-go-react-development-setup-with-docker-part2
 draft: false
-date: 2020-02-23T10:55:15.296Z
+date: 2020-05-27T01:00:00.000Z
 description: >-
   Transitioning to Go from another language is challenging. This is not a tutorial. In this post I share the obstacles I faced.
 category: "Go and React Series"
@@ -91,4 +91,4 @@ Even with these sources, I was still eager to find a production ready API servic
 
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">First day of training has been intense! <a href="https://twitter.com/hashtag/golang?src=hash&amp;ref_src=twsrc%5Etfw">#golang</a> <a href="https://twitter.com/hashtag/ultimategotraining?src=hash&amp;ref_src=twsrc%5Etfw">#ultimategotraining</a> <a href="https://t.co/wdEQ5MrxK0">pic.twitter.com/wdEQ5MrxK0</a></p>&mdash; ivorscott (@ivorsco77) <a href="https://twitter.com/ivorsco77/status/1182291425830019074?ref_src=twsrc%5Etfw">October 10, 2019</a></blockquote>
 
-_The [next post](ultimate-go-react-development-setup-with-docker-part3) in this series illustrates an updated Docker workflow for a production ready Go service._
+<!-- _The [next post](ultimate-go-react-development-setup-with-docker-part3) in this series illustrates an updated Docker workflow for a production ready Go service._ -->

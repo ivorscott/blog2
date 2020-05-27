@@ -9,7 +9,7 @@ description: >-
 category: "Go and React Series"
 tags:
   - Docker Golang React Prometheus Grafana
-socialImage: "/media/part6.jpg"
+socialImage: "/media/part8.jpg"
 ---
 
 <!-- PART OF A SERIES -->
@@ -19,7 +19,7 @@ socialImage: "/media/part6.jpg"
 </i>
 </center>
 
-![](/media/part6.jpg)
+![](/media/part8.jpg)
 
 # Introduction
 

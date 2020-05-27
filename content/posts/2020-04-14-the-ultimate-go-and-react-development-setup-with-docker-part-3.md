@@ -2,14 +2,14 @@
 template: post
 title: My API Workflow with Go pt.3
 slug: ultimate-go-react-development-setup-with-docker-part3
-draft: false
+draft: true
 date: 2020-04-14T9:10:15.296Z
 description: >-
   I went through my API implementation in the previous post. Now I'll demonstrate the development workflow for the updated service and how to profile it.
 category: "Go and React Series"
 tags:
   - Docker Golang React Makefile Postgres Testing Migrations Seeding
-socialImage: "/media/part4.jpg"
+socialImage: "/media/part3.jpg"
 ---
 
 <!-- PART OF A SERIES -->
@@ -19,7 +19,7 @@ socialImage: "/media/part4.jpg"
 </i>
 </center>
 
-![](/media/part4.jpg)
+![](/media/part3.jpg)
 
 # Introduction
 
@@ -336,4 +336,4 @@ While testing, we programmatically created a postgres container. In the backgrou
 
 Lastly, we got a glimpse at what profiling a Go API looks like. Profiling shouldn't be a frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise.
 
-_In the [next post](ultimate-go-react-development-setup-with-docker-part4) I discuss the API implementation._
+<!-- _In the [next post](ultimate-go-react-development-setup-with-docker-part4) I discuss the API implementation._ -->

@@ -2,14 +2,14 @@
 template: post
 title: Building an API with Go pt.4
 slug: ultimate-go-react-development-setup-with-docker-part4
-draft: false
+draft: true
 date: 2020-04-15T10:55:15.296Z
 description: >-
   How do you build an production ready Go API? What components matter?
 category: "Go and React Series"
 tags:
   - Docker Golang React Makefile Postgres Testing Migrations Seeding
-socialImage: "/media/part3.jpg"
+socialImage: "/media/part4.jpg"
 ---
 
 <!-- PART OF A SERIES -->
@@ -19,7 +19,7 @@ socialImage: "/media/part3.jpg"
 </i>
 </center>
 
-![](/media/part3.jpg)
+![](/media/part4.jpg)
 
 # Introduction
 

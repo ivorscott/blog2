@@ -9,7 +9,7 @@ description: >-
 category: "Go and React Series"
 tags:
   - Docker Golang React Makefile Postgres Testing Migrations Seeding
-socialImage: "/media/part5.jpg"
+socialImage: "/media/part7.jpg"
 ---
 
 <!-- PART OF A SERIES -->
@@ -19,7 +19,7 @@ socialImage: "/media/part5.jpg"
 </i>
 </center>
 
-![](/media/part5.jpg)
+![](/media/part7.jpg)
 
 # Introduction
 

@@ -2,14 +2,14 @@
 template: post
 title: Deploying with Swarm and Traefik pt.5
 slug: ultimate-go-react-development-setup-with-docker-part5
-draft: false
+draft: true
 date: 2020-05-13T9:10:15.296Z
 description: >-
 
 category: "Go and React Series"
 tags:
   - Docker Golang Swarm Traefik
-socialImage: "/media/part7.jpg"
+socialImage: "/media/part5.jpg"
 ---
 
 <!-- PART OF A SERIES -->
@@ -19,7 +19,7 @@ socialImage: "/media/part7.jpg"
 </i>
 </center>
 
-![](/media/part7.jpg)
+![](/media/part5.jpg)
 
 # Introduction
 
