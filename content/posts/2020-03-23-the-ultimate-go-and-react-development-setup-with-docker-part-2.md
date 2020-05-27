@@ -35,15 +35,15 @@ We focus on:
 
 ### 1. Many Tools Are Writtten In Go
 
-While deploying apps to the cloud I realized quite quickly that many of the tools I used were written in Go. Tools including [Drone](https://github.com/drone/drone), [Portainer](https://github.com/portainer/portainer), [Docker](https://github.com/moby/moby), [Kubernetes](https://github.com/kubernetes/kubernetes), [Terraform](https://github.com/hashicorp/terraform) and [Traefik](https://github.com/containous/traefik). I began to wonder: _What was I missing? What was so special about the langauge?_
+While deploying apps to the cloud I realized quite quickly that many of the tools I used were written in Go. Tools including [Drone](https://github.com/drone/drone), [Portainer](https://github.com/portainer/portainer), [Docker](https://github.com/moby/moby), [Kubernetes](https://github.com/kubernetes/kubernetes), [Terraform](https://github.com/hashicorp/terraform) and [Traefik](https://github.com/containous/traefik). I began to wonder: _What was I missing? What was so special about the language?_
 
 ### 2. Renowned Creators
 
-Ken Thompson, Rob Pike and Robert Griesemer, are the original creators of the language. All have amazing credentials. They are the same people behind Unix, UTF-8, the B programming language (predecessor to the C programming language) and the Hotspot JVM. Checkout out [creating the Go programming langauge on Go Time](https://changelog.com/gotime/100).
+Ken Thompson, Rob Pike and Robert Griesemer, are the original creators of the language. All have amazing credentials. They are the same people behind Unix, UTF-8, the B programming language (predecessor to the C programming language) and the Hotspot JVM. Checkout out [creating the Go programming language on Go Time](https://changelog.com/gotime/100).
 
 ### 3. Simple Concurrency Model
 
-Concurrency is incredibly difficult to get right even when there is language support. Go has [concurrency primatives](https://www.golang-book.com/books/intro/10) called [goroutines](https://tpaschalis.github.io/goroutines-size/) and [channels](https://www.golang-book.com/books/intro/10#section2) designed for web scale. It's also one of the first modern programming languages to utilize all the cores on a multi-core machine.
+Concurrency is incredibly difficult to get right even when there is language support. Go has [concurrency primitives](https://www.golang-book.com/books/intro/10) called [goroutines](https://tpaschalis.github.io/goroutines-size/) and [channels](https://www.golang-book.com/books/intro/10#section2) designed for web scale. It's also one of the first modern programming languages to utilize all the cores on a multi-core machine.
 
 ### 4. Fast Compilation
 
@@ -55,7 +55,7 @@ The [standard built-in library](https://golang.org/pkg/) has over 100 packages a
 
 ### 6. Light-weight images
 
-Your code and its dependencies are compiled into a single static binary. Static binaries tend to be small in size. In combination with Docker you can acheive super light weight images, making Go appilcations great for container deployments.
+Your code and its dependencies are compiled into a single static binary. Static binaries tend to be small in size. In combination with Docker you can achieve super light weight images, making Go applications great for container deployments.
 
 ### 7. Tooling and UX
 
@@ -65,7 +65,7 @@ Even Ryan Dahl, the creator of Node and [Deno](https://deno.land/manual), abando
 
 ### 8. Type Is Life
 
-Go comes with type safety by default. It's a statically typed langauge with an [unconventional type system](https://rakyll.org/typesystem/) and that's a good thing.
+Go comes with type safety by default. It's a statically typed language with an [unconventional type system](https://rakyll.org/typesystem/) and that's a good thing.
 
 # Challenges
 
@@ -85,7 +85,7 @@ An ORM like [GORM](https://gorm.io/) can get you to your destination faster but 
 
 # Training
 
-Every new go developer should read [Effective Go](https://golang.org/doc/effective_go.html) on the official Go web page. It summarizes _idiomatic_ Go development, in other words, _the Go way_ to do things. Also checkout Todd McLeod's Udemy course, [Learn How To Code: Google's Go Programming Language](https://www.udemy.com/course/go-programming-language), a comprehensive guide to the language fundamentals. For a more project based book tutorial try [Let's Go](https://lets-go.alexedwards.net/) by Alex Edwards. Another book worth mentioning is [The Go Programming Language](https://www.amazon.com/Programming-Language-Addison-Wesley-Professional-Computing-ebook/dp/B0184N7WWS/) by Alan A. A. Donovan and Brian W. Kernighan, it's a classic Go book. I personally enjoyed its thorough explaination of the language and have a copy on my desk.
+Every new go developer should read [Effective Go](https://golang.org/doc/effective_go.html) on the official Go web page. It summarizes _idiomatic_ Go development, in other words, _the Go way_ to do things. Also checkout Todd McLeod's Udemy course, [Learn How To Code: Google's Go Programming Language](https://www.udemy.com/course/go-programming-language), a comprehensive guide to the language fundamentals. For a more project based book tutorial try [Let's Go](https://lets-go.alexedwards.net/) by Alex Edwards. Another book worth mentioning is [The Go Programming Language](https://www.amazon.com/Programming-Language-Addison-Wesley-Professional-Computing-ebook/dp/B0184N7WWS/) by Alan A. A. Donovan and Brian W. Kernighan, it's a classic Go book. I personally enjoyed its thorough explanation of the language and have a copy on my desk.
 
 Even with these sources, I was still eager to find a production ready API service example. Not a web app and nothing basic. I wanted a complete guide I could tinker with. Ardan Labs scratched my itch. Thankfully, I heard about them last year and attended a workshop in Berlin. It placed me on the right track. I highly recommend their [workshops](https://www.eventbrite.com/o/ardan-labs-7092394651?utm_source=ardan_website&utm_medium=scrolling_banner&utm_campaign=website_livestream_promo) and [courses](https://education.ardanlabs.com/).
 
