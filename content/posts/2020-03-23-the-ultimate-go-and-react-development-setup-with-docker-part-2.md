@@ -33,7 +33,7 @@ We focus on:
 
 # Why Go?
 
-### 1. Many Tools Are Writtten In Go
+### 1. Many Tools Are Written In Go
 
 While deploying apps to the cloud I realized quite quickly that many of the tools I used were written in Go. Tools including [Drone](https://github.com/drone/drone), [Portainer](https://github.com/portainer/portainer), [Docker](https://github.com/moby/moby), [Kubernetes](https://github.com/kubernetes/kubernetes), [Terraform](https://github.com/hashicorp/terraform) and [Traefik](https://github.com/containous/traefik). I began to wonder: _What was I missing? What was so special about the language?_
 
