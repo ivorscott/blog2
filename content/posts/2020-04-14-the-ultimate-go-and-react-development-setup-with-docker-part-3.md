@@ -5,10 +5,10 @@ slug: ultimate-go-react-development-setup-with-docker-part3
 draft: false
 date: 2020-05-29T9:00:00.000Z
 description: >-
-  I went through my API implementation in the previous post. Now I'll demonstrate the development workflow for the updated service and how to profile it.
+  In this post I demo a Docker-based API workflow that involves seeding and migrating a Postgres database. After that, I show how to profile the API with pprof.
 category: "Go and React Series"
 tags:
-  - Docker Golang React Makefile Postgres Testing Migrations Seeding
+  - Docker Golang React Postgres TestContainers Migrations Seeding
 socialImage: "/media/part3.jpg"
 ---
 
@@ -248,7 +248,7 @@ Then navigate to the client app at: <https://localhost:3000> in a separate tab.
 
 ## Step 6) Run unit and integration tests
 
-Integration tests run in addition to unit tests. During integration tests, a temporary Docker container is programtically created for Postgres, then automatically destroyed after tests run. Under the hood the integration tests make use of the [testcontainers-go](https://github.com/testcontainers/testcontainers-go).
+Integration tests run in addition to unit tests. During integration tests, a temporary Docker container is programmatically created for Postgres, then automatically destroyed after tests run. Under the hood the integration tests make use of the [testcontainers-go](https://github.com/testcontainers/testcontainers-go).
 
 ```bash
 cd api
@@ -330,7 +330,7 @@ Nope! I'm still wrapping my head around profiling in Go but I find pprof and [co
 
 ## Conclusion
 
-This demonstration included seeding and migrations to handle a growing postgres database. We went from no database, to an empty one, to a seeded one, using a Docker-based workflow. Running the API in a container still uses live reload (like in Part 1). But now there's no makefile abstraction hiding the docker-compose commands. We also discovered we can opt-out of live reload and containerizing the API all together in development taking an idomatic Go approach with `go run ./cmd/api`, optionally supplying cli flags or exported environment variables.
+This demonstration included seeding and migrations to handle a growing postgres database. We went from no database, to an empty one, to a seeded one, using a Docker-based workflow. Running the API in a container still uses live reload (like in Part 1). But now there's no makefile abstraction hiding the docker-compose commands. We also discovered we can opt-out of live reload and containerizing the API all together in development taking an idiomatic Go approach with `go run ./cmd/api`, optionally supplying cli flags or exported environment variables.
 
 While testing, we programmatically created a postgres container. In the background, our test database leveraged the same seeding and migration functionality we saw earlier. This enables the tests to set things up before they run. Since we used testcontainers-go any containers created are cleaned up afterwards.
 
