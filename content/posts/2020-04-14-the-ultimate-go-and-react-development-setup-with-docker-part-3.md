@@ -2,8 +2,8 @@
 template: post
 title: My API Workflow with Go pt.3
 slug: ultimate-go-react-development-setup-with-docker-part3
-draft: true
-date: 2020-04-14T9:10:15.296Z
+draft: false
+date: 2020-05-29T9:00:00.000Z
 description: >-
   I went through my API implementation in the previous post. Now I'll demonstrate the development workflow for the updated service and how to profile it.
 category: "Go and React Series"
