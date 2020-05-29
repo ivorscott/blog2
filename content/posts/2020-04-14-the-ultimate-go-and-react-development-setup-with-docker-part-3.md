@@ -259,7 +259,7 @@ go test -v ./...
 
 ### Optional Step) Idiomatic Go development
 
-Containerizing to Go API is optional, so you can work with the API in an idiomatic fashion. This also means you can opt-out of live reloading. When running the API normally use command line flags or exported environment variables. TLS encryption for the database is enabled by default and should be disabled in development.
+Containerizing the Go API is optional, so you can work with the API in an idiomatic fashion. This also means you can opt-out of live reloading. When running the API normally use command line flags or exported environment variables. TLS encryption for the database is enabled by default and should be disabled in development.
 
 ```bash
 export API_DB_DISABLE_TLS=true
