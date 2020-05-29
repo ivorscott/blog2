@@ -184,7 +184,7 @@ The database is still empty. Create a seed file for the products table.
 touch ./api/internal/schema/seeds/products.sql
 ```
 
-This adds an empty `products.sql` seed file to the project. Located under: `./api/internal/schema/seeds/products.sql`.
+This adds an empty `products.sql` seed file to the project. Located under: `./api/internal/schema/seeds/`.
 
 Add the following SQL content. This data will be used during local development.
 
