@@ -3,9 +3,9 @@ template: post
 title: Building an API with Go pt.4
 slug: ultimate-go-react-development-setup-with-docker-part4
 draft: true
-date: 2020-04-15T10:55:15.296Z
+date: 2020-06-06T00:00:00.000Z
 description: >-
-  How do you build an production ready Go API? What components matter?
+  In this post I discuss the API implementation. You'll also get an understanding of how I used docker-compose to create my API workflow in development.
 category: "Go and React Series"
 tags:
   - Docker Golang React Makefile Postgres Testing Migrations Seeding
@@ -337,31 +337,34 @@ func wrapMiddleware(mw []Middleware, handler Handler) Handler {
 }
 ```
 
-To stick to the correct order, the code loops backwards invoking each middleware in the variadic set and then creates a new wrapped handler.
+I deliberately left out some important functions from the Middleware section so I could address it here.
+
+The API has two error handling middleware functions. One for errors and another to recover from panics.
 
 [explain]
 
 ```go
-func Logger(log *log.Logger) web.Middleware {
+func Errors(log *log.Logger) web.Middleware {
   f := func(before web.Handler) web.Handler {
     h := func(w http.ResponseWriter, r *http.Request) error {
-      v, ok := r.Context().Value(web.KeyValues).(*web.Values)
-      if !ok {
-        return errors.New("web value missing from context")
+      if err := before(w, r); err != nil {
+        log.Printf("ERROR : %+v", err)
+        if err := web.RespondError(r.Context(), w, err); err != nil {
+          return err
+        }
+        if ok := web.IsShutdown(err); ok {
+          return err
+        }
       }
-      err := before(w, r)
-      log.Printf("(%d) : %s %s -> %s (%s)",
-        v.StatusCode,
-        r.Method, r.URL.Path,
-        r.RemoteAddr, time.Since(v.Start),
-      )
-      return err
+      return nil
     }
     return h
   }
   return f
 }
 ```
+
+[explain]
 
 ## Handling Requests
 
@@ -405,34 +408,6 @@ func API(shutdown chan os.Signal, repo *database.Repository, log *log.Logger, Fr
   app.Handle(http.MethodPut, "/v1/products/{id}", p.Update)
   app.Handle(http.MethodDelete, "/v1/products/{id}", p.Delete)
   return c.Handler(app)
-}
-```
-
-### The Web Framework
-
-[explain]
-
-```go
-// api/internal/platform/web/web.go
-type Handler func(http.ResponseWriter, *http.Request) error
-
-type App struct {
-  mux      *chi.Mux
-  log      *log.Logger
-  mw       []Middleware
-  shutdown chan os.Signal
-}
-```
-
-```go
-// api/internal/platform/web/web.go
-type ctxKey int
-
-const KeyValues ctxKey = 1
-
-type Values struct {
-  StatusCode int
-  Start      time.Time
 }
 ```
 
@@ -498,67 +473,6 @@ func (p *Products) Create(w http.ResponseWriter, r *http.Request) error {
 }
 ```
 
-### Request Validation
-
-[explain]
-
-```go
-type FieldError struct {
-  Field string `json:"field"`
-  Error string `json:"error"`
-}
-
-type ErrorResponse struct {
-  Error  string       `json:"error"`
-  Fields []FieldError `json:"fields,omitempty"`
-}
-
-type Error struct {
-  Err    error
-  Status int
-  Fields []FieldError
-}
-
-func NewRequestError(err error, status int) error {
-  return &Error{Err: err, Status: status}
-}
-
-func (e *Error) Error() string {
-  return e.Err.Error()
-}
-```
-
-```go
-func Decode(r *http.Request, val interface{}) error {
-  decoder := json.NewDecoder(r.Body)
-  decoder.DisallowUnknownFields()
-  if err := decoder.Decode(val); err != nil {
-    return NewRequestError(err, http.StatusBadRequest)
-  }
-  if err := validate.Struct(val); err != nil {
-    verrors, ok := err.(validator.ValidationErrors)
-    if !ok {
-      return err
-    }
-    lang, _ := translator.GetTranslator("en")
-    var fields []FieldError
-    for _, verror := range verrors {
-      field := FieldError{
-        Field: verror.Field(),
-        Error: verror.Translate(lang),
-      }
-      fields = append(fields, field)
-    }
-    return &Error{
-      Err:    errors.New("field validation error"),
-      Status: http.StatusBadRequest,
-      Fields: fields,
-    }
-  }
-  return nil
-}
-```
-
 By adopting an SQL query builder, not only do I have a better understanding of the queries that are being made to the database, I can resue my existing SQL knowledge from project to project. Bypassing the ineffiency of requests, and opaqueness that comes with ORM abastraction layers.
 
 ### Database Handlers
@@ -589,145 +503,6 @@ func Create(ctx context.Context, repo *database.Repository, np NewProduct, now t
   return &p, nil
 }
 ```
-
-### Server Response
-
-[explain]
-
-```go
-func Respond(ctx context.Context, w http.ResponseWriter, val interface{}, statusCode int) error {
-  v := ctx.Value(KeyValues).(*Values)
-  v.StatusCode = statusCode
-  if statusCode == http.StatusNoContent {
-    w.WriteHeader(statusCode)
-    return nil
-  }
-  res, err := json.Marshal(val)
-  if err != nil {
-    return err
-  }
-  w.WriteHeader(statusCode)
-  if _, err := w.Write(res); err != nil {
-    return err
-  }
-  return nil
-}
-```
-
-## Error Handling
-
-Errors get bubbled up to the main.go file. The run function is the only place in the application that can throw a fatal error. We are ready discussed the need to graceful shutdown which occurs which may occur due to signals outside the application. But what happens if the application it self wishes to shutdown it also need a mechanism to signal a shutdown.
-
-![](/media/smoke.gif)
-
-[explain]
-
-```go
-type shutdown struct {
-  Message string
-}
-
-func (s *shutdown) Error() string {
-  return s.Message
-}
-
-func NewShutdownError(message string) error {
-  return &shutdown{message}
-}
-
-func IsShutdown(err error) bool {
-  if _, ok := errors.Cause(err).(*shutdown); ok {
-    return true
-  }
-  return false
-}
-```
-
-The App Handle method will call the handler and catch any propagated error. If the error is a shutdown
-we call the SignalShutdown function to gracefully shutdown the app which sends a `syscall.SIGSTOP` signal down
-the shutdown channel.
-
-```go
-func (a *App) SignalShutdown() {
-  a.log.Println("error returned from handler indicated integrity issue, shutting down service")
-  a.shutdown <- syscall.SIGSTOP
-}
-```
-
-### Error Handling Middleware
-
-I deliberately left out some important functions from the Middleware section so I could address it here.
-
-The API has two error handling middleware functions. One for errors and another to recover from panics.
-
-[explain]
-
-```go
-func Errors(log *log.Logger) web.Middleware {
-  f := func(before web.Handler) web.Handler {
-    h := func(w http.ResponseWriter, r *http.Request) error {
-      if err := before(w, r); err != nil {
-        log.Printf("ERROR : %+v", err)
-        if err := web.RespondError(r.Context(), w, err); err != nil {
-          return err
-        }
-        if ok := web.IsShutdown(err); ok {
-          return err
-        }
-      }
-      return nil
-    }
-    return h
-  }
-  return f
-}
-```
-
-[explain]
-
-```go
-func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
-  if webErr, ok := errors.Cause(err).(*Error); ok {
-    er := ErrorResponse{
-      Error:  webErr.Err.Error(),
-      Fields: webErr.Fields,
-    }
-    if err := Respond(ctx, w, er, webErr.Status); err != nil {
-      return err
-    }
-    return nil
-  }
-  er := ErrorResponse{
-    Error: http.StatusText(http.StatusInternalServerError),
-  }
-  if err := Respond(ctx, w, er, http.StatusInternalServerError); err != nil {
-    return err
-  }
-  return nil
-}
-```
-
-Panics are [explain]
-
-```go
-func Panics(log *log.Logger) web.Middleware {
-  f := func(after web.Handler) web.Handler {
-    h := func(w http.ResponseWriter, r *http.Request) (err error) {
-      defer func() {
-        if r := recover(); r != nil {
-          err = errors.Errorf("panic: %v", r)
-          log.Printf("%s", debug.Stack())
-        }
-      }()
-      return after(w, r)
-    }
-    return h
-  }
-  return f
-}
-```
-
-The signal is received at the the other end of the shutdown channel and handled by the `select` in the main function.
 
 ## Seeding & Migrations
 
@@ -878,4 +653,4 @@ pgc, err := tc.GenericContainer(ctx, tc.GenericContainerRequest{
 
 We saw that project structure can be tricky in Go. Top level packages in the project can be used and depended on in other projects. Somethings don't need to be reusable. Leverage the internal folder to hide code from external projects and identify your business logic from the non-business domain logic. When considering bewteen frameworks, consider creating your own. The benefit of doing so is that you know what it does because you built it. Try to avoid creating black boxes in software. Choosing an ORM as abstraction layer is creating a black box in your data access layer which can come back to haunt you later. The less abstraction layers you have the more transparent your architecture will be.
 
-In the [next post](ultimate-go-react-development-setup-with-docker-part5) I discuss the OAuth 2 with Auth0 in Go.
+<!-- In the [next post](ultimate-go-react-development-setup-with-docker-part5) I discuss the deployment with Swarm and Traefik. -->

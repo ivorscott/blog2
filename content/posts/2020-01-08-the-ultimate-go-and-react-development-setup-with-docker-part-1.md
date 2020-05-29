@@ -8,7 +8,14 @@ description: >-
   Using Node, I had a great fullstack development workflow, but I struggled to achieve one in Go. What I wanted was the ability to live reload a Go API and debug it with breakpoints while in a container. In this tutorial we'll setup the ultimate Go and React development setup with Docker.
 category: "Go and React Series"
 tags:
-  - Delve Docker Golang React Makefile Postgres Traefik VSCode
+  - Delve
+  - Docker
+  - Golang
+  - React
+  - Makefile
+  - Postgres
+  - Traefik
+  - VSCode
 socialImage: "/media/matthew-sleeper-kn8atn5_zgq-unsplash.jpg"
 ---
 

@@ -8,7 +8,13 @@ description: >-
   In this post I demo a Docker-based API workflow that involves seeding and migrating a Postgres database. After that, I show how to profile the API with pprof.
 category: "Go and React Series"
 tags:
-  - Docker Golang React Postgres TestContainers Migrations Seeding
+  - Docker
+  - Golang
+  - React
+  - Postgres
+  - TestContainers
+  - Migrations
+  - Seeding
 socialImage: "/media/part3.jpg"
 ---
 
@@ -102,9 +108,7 @@ Make a migration to create a products table.
 docker-compose run migration create_products_table
 ```
 
-![](/media/create-products.png)
-
-Databases have a tendency to grow. We use migrations to make changes to the postgres database. Migrations are used to _upgrade_ or _downgrade_ the database structure. Add SQL to both `up` & `down` migrations.
+Databases have a tendency to grow. We use migrations to make changes to the postgres database. Migrations are used to _upgrade_ or _downgrade_ the database structure. Add SQL to both `up` & `down` migrations. The down migration simply reverts the up migration if we need to.
 
 The files are located under: `./api/internal/schema/migrations/`.
 
@@ -130,9 +134,7 @@ CREATE TABLE products (
 DROP TABLE IF EXISTS products;
 ```
 
-The down migration simply reverts the up migration if we need to.
-
-![](/media/create-products-migrations.png)
+![](/media/create-products.png)
 
 #### Create a second migration
 
@@ -141,8 +143,6 @@ Let's include tagged information for each product. Make another migration to add
 ```bash
 docker-compose run migration add_tags_to_products
 ```
-
-![](/media/add-tags.png)
 
 **Up Migration**
 
@@ -161,6 +161,8 @@ ADD COLUMN tags varchar(255);
 ALTER TABLE products
 DROP Column tags;
 ```
+
+![](/media/add-tags.png)
 
 Cool, we have 2 migrations but we haven't used them yet. Migrate the database up to the latest migration.
 
