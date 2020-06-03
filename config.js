@@ -34,6 +34,7 @@ module.exports = {
       twitter: "ivorsco77",
       github: "ivorscott",
       cv: "https://hire.ivorscott.com",
+      art: "https://ivorscott.com",
     },
   },
 };

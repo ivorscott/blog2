@@ -44,6 +44,9 @@ const getIcon = (name: string) => {
     case "cv":
       icon = ICONS.CV;
       break;
+    case "art":
+      icon = ICONS.ART;
+      break;
     default:
       icon = {};
       break;

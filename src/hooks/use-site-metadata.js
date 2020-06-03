@@ -16,6 +16,7 @@ const useSiteMetadata = () => {
                 twitter
                 email
                 cv
+                art
               }
             }
             menu {

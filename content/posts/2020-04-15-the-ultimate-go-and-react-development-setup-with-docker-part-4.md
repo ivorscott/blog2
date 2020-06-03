@@ -38,7 +38,6 @@ We focus on:
 - [Graceful Shutdown](#graceful-shutdown)
 - [Middleware](#middleware)
 - [Handling Requests](#handling-requests)
-- [Error Handling](#error-handling)
 - [Seeding & Migrations](#seeding--migrations)
 - [Integration Testing](#integration-testing)
 
@@ -305,20 +304,34 @@ case sig := <-shutdown:
 
 ## Middleware
 
-A middleware is a function that intercepts the request and response provided by an HTTP server in order to execute logic and then it either ends the response early in the event of integrity error or it calls the next middleware. The demo uses a custom implementation of middleware instead of leveraging 3rd party packages like [Alice](https://github.com/justinas/alice) or [negroni](https://github.com/urfave/negroni).
+<div><div title="definition" style="display:inline;background-color: #D2F774">Middleware functions are functions that intercept the request and response provided by an HTTP server in order to execute intermediary logic.</div> These functions either end the response early when an error occurs or call the next middleware in the list. The demo uses a custom implementation of middleware instead of leveraging a 3rd party package like <a href="https://github.com/justinas/alice" target=_blank">Alice</a>.</div>
 
 When a request comes in it travels through a set of middleware layers before reaching the handler and then back out again.
 
 ![](/media/middleware.png)
 
-Middleware functions are passed down to the custom web framework located in the `api/cmd/api/internal/routes.go`.
+Middleware functions are passed down to a custom web framework derived from a `web` package located under `api/internal/platform/web`. The web package handles all the request and response logic for the service. We create a `NewApp` and it returns a new application instance with access to the shutdown channel we saw earlier, a logger, router and middleware.
+
+```go
+// api/internal/platform/web/web.go
+func NewApp(shutdown chan os.Signal, logger *log.Logger, mw ...Middleware) *App {
+  return &App{
+    log:      logger,
+    mux:      chi.NewRouter(),
+    mw:       mw,
+    shutdown: shutdown,
+  }
+}
+```
+
+NewApp is initiated in `routes.go`. The order matters so the request will hit the logger middleware, than the errors, and lastly the panics middleware before reaching the handler.
 
 ```go
 // api/cmd/api/internal/routes.go
 app := web.NewApp(shutdown, log, mid.Logger(log), mid.Errors(log), mid.Panics(log))
 ```
 
-The api/internal/mid package contains all the middleware for the service. In a future post I will additional middleware for auth and metrics.
+Having the panics middleware last allows us to recover from a panic returned by the errors middleware if one exists. The `mid` package contains all the middleware for the service. It is located under `api/internal/mid`. If you wish to add authentication and metrics this is where you would place the logic.
 
 The web package will take each handler and wrap it in the middleware set. It does this by leveraging `web.wrapMiddleware(mw []Middleware, handler Handler)`, which takes a slice of middleware and a handler as arguments.
 
