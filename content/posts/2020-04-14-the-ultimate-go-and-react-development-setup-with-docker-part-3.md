@@ -5,7 +5,7 @@ slug: ultimate-go-react-development-setup-with-docker-part3
 draft: false
 date: 2020-05-29T9:00:00.000Z
 description: >-
-  In this post I demo a Docker-based API workflow that involves seeding and migrating a Postgres database. After that, I show how to profile the API with pprof.
+  In this post I demo a Docker-based API workflow that involves seeding and migrating a Postgres database. After that, I show how to debug and profile the API.
 category: "Go and React Series"
 tags:
   - Docker
@@ -27,13 +27,16 @@ socialImage: "/media/part3.jpg"
 
 ![](/media/part3.jpg)
 
+_Updated: June 4th, 2020_
+
 # Introduction
 
-[Part 2](/ultimate-go-react-development-setup-with-docker-part2) was about transitioning to Go. This post contains a demo of a Docker-based API workflow inspired by the [Ardan Labs service example](https://github.com/ardanlabs/service). After the demo I'll end with how to profile the API with [pprof](https://golang.org/pkg/runtime/pprof/).
+[Part 2](/ultimate-go-react-development-setup-with-docker-part2) was about transitioning to Go. This post contains a demo of a Docker-based API workflow inspired by the [Ardan Labs service example](https://github.com/ardanlabs/service). After the demo I'll end with how to debug and profile the API.
 
 We focus on:
 
 - [A Demo](#demo)
+- [Debugging](#debugging)
 - [Profiling](#profiling)
 
 ## Requirements
@@ -270,7 +273,40 @@ go run ./cmd/api
 # or go run ./cmd/api --db-disable-tls=true
 ```
 
-## Profiling
+# Debugging
+
+Debugging the API with Delve is no different than in [Part 1](/ultimate-go-react-development-setup-with-docker#delve-debugging-a-go-api). Run the debuggable API first.
+
+```bash
+docker-compose up debug-api
+```
+
+In `api/cmd/api/internal/handlers` open `products.go` and place `2` breakpoints inside the products `List` handler in VSCode. Click the debugger tab within the editor sidebar. Then click “Launch Remote”. The console will show when a breakpoint is created:
+
+```bash
+debug-api_1  | 2020-06-04T20:21:18Z info layer=debugger created breakpoint: &api.Breakpoint{ID:1, Name:"",
+Addr:0x9ebf4a, Addrs:[]uint64{0x9ebf4a}, File:"/api/cmd/api/internal/handlers/products.go", Line:23,
+FunctionName:"github.com/ivorscott/go-delve-reload/cmd/api/internal/handlers.(*Products).List", Cond:"",
+Tracepoint:false, TraceReturn:false, Goroutine:false, Stacktrace:0, Variables:[]string(nil),
+LoadArgs:(*api.LoadConfig)(0xc0010d8180), LoadLocals:(*api.LoadConfig)(0xc0010d81b0),
+HitCount:map[string]uint64{}, TotalHitCount:0x0}
+```
+
+Navigate to: `https://localhost:8888/v1/products` to trigger the List handler. You should see the editor pause where you placed the first breakpoint. Click the step over icon (shown below) in the debugger menu to select the next breakpoint. Hover over the `list` variable to inspect the data.
+
+![](/media/stepover.png)
+
+![](/media/2breakpoints.png)
+
+Lastly, you aren't limited to debugging only through the editor. You can use the delve debugger directly if you know what you are doing and the debuggable API is already running:
+
+```bash
+docker-compose exec debug-api dlv connect localhost:2345
+```
+
+![](/media/dlv.png)
+
+# Profiling
 
 <div>
 To measure how our programs are performing we use profiling. <i>The Go Programming langauge</i> by Alan A. A. Donovan and Brian W. Kernighan writes, <div style="display:inline;background-color: #D2F774">"Profiling is an automated approach to performance measurement based on sampling a number of profile events during the execution, then extrapolating from them during a post-processing step; the resulting statistical summary is called a profile".</div> Amazingly, Go supports many kinds of profiling. The standard library supports profiling with a package named <a href="https://golang.org/pkg/net/http/pprof/" target="_blank">pprof</a>. Here's a few predefined profiles pprof provides:</div>
@@ -336,6 +372,6 @@ This demonstration included seeding and migrations to handle a growing postgres 
 
 While testing, we programmatically created a postgres container. In the background, our test database leveraged the same seeding and migration functionality we saw earlier. This enables the tests to set things up before they run. Since we used testcontainers-go any containers created are cleaned up afterwards.
 
-Lastly, we got a glimpse at what profiling a Go API looks like. Profiling shouldn't be a frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise.
+Lastly, we got a glimpse at what debugging and profiling a Go API looks like. Profiling shouldn't be a frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise. Whenever you need to debug your application with delve you simply create a debuggable container instance.
 
-<!-- _In the [next post](ultimate-go-react-development-setup-with-docker-part4) I discuss the API implementation._ -->
+<!-- _In the [next post](ultimate-go-react-development-setup-with-docker-part4) I discuss the API implementation._-->

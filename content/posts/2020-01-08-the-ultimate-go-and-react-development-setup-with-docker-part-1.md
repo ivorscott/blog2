@@ -1233,7 +1233,7 @@ We use `dlv debug` to compile and begin debugging the main package located in th
 make debug-api
 ```
 
-Go to `/api/internal/handlers.go` and place a break point in one of the handlers. Within VSCode, click the "Launch Remote" button in the debugger tab. Next, navigate to the route that triggers the handler. You should see the editor pause where you placed the break point.
+Go to `api/internal/handlers.go` and place a breakpoint in one of the handlers. Within VSCode, click the "Launch Remote" button in the debugger tab. Next, navigate to the route that triggers the handler. You should see the editor pause where you placed the breakpoint.
 
 ![](/media/screen-shot-2020-01-12-at-21.24.33.png)
 
