@@ -14,6 +14,7 @@ const useSiteMetadata = () => {
               contacts {
                 github
                 twitter
+                linkedin
                 email
                 cv
                 art

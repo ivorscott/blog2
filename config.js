@@ -30,9 +30,10 @@ module.exports = {
     bio:
       "Artist, Software Engineer, Traefik Ambassador and Docker Mastery Teaching Assistant based in Berlin.",
     contacts: {
-      email: "ivor@devpie.io",
-      twitter: "ivorsco77",
+      linkedin: "ivorscott",
       github: "ivorscott",
+      twitter: "ivorsco77",
+      email: "ivor@devpie.io",
       cv: "https://hire.ivorscott.com",
       art: "https://ivorscott.com",
     },
