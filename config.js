@@ -6,7 +6,7 @@ module.exports = {
   title: "Art, Tech & Ideas",
   subtitle: "I design, develop, and deploy.",
   copyright: "© All rights reserved.",
-  disqusShortname: "disqus_V954hpJhAL",
+  disqusShortname: "ivorscott",
   postsPerPage: 4,
   googleAnalyticsId: "UA-73379983-2",
   useKatex: false,
