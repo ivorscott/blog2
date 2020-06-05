@@ -8,8 +8,8 @@ import { MarkdownRemark } from "../types";
 
 type Props = {
   data: {
-    markdownRemark: MarkdownRemark
-  }
+    markdownRemark: MarkdownRemark,
+  },
 };
 
 const PostTemplate = ({ data }: Props) => {
@@ -19,7 +19,7 @@ const PostTemplate = ({ data }: Props) => {
   const {
     title: postTitle,
     description: postDescription,
-    socialImage
+    socialImage,
   } = frontmatter;
   const metaDescription =
     postDescription !== null ? postDescription : siteSubtitle;
