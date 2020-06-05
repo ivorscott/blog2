@@ -28,7 +28,7 @@ module.exports = {
     name: "Ivor Scott",
     photo: "/photo.jpg",
     bio:
-      "Artist, Software Engineer, Traefik Ambassador and Docker Mastery Teaching Assistant. Based in Berlin.",
+      "Artist, Software Engineer, Traefik Ambassador and Docker Mastery Teaching Assistant based in Berlin.",
     contacts: {
       email: "ivor@devpie.io",
       twitter: "ivorsco77",
