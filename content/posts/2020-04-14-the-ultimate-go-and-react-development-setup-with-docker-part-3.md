@@ -372,6 +372,6 @@ This demonstration included seeding and migrations to handle a growing postgres 
 
 While testing, we programmatically created a postgres container. In the background, our test database leveraged the same seeding and migration functionality we saw earlier. This enables the tests to set things up before they run. Since we used testcontainers-go any containers created are cleaned up afterwards.
 
-Lastly, we got a glimpse at what debugging and profiling a Go API looks like. Profiling shouldn't be a frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise. Whenever you need to debug your application with delve you simply create a debuggable container instance.
+Lastly, we got a glimpse at what debugging and profiling the updated API looks like. Profiling shouldn't be a frequent task in your development workflow. Profile your Go applications when performance matters or when issues arise. Whenever you need to debug your application with delve you simply create a debuggable container instance.
 
 <!-- _In the [next post](ultimate-go-react-development-setup-with-docker-part4) I discuss the API implementation._-->
