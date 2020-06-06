@@ -23,11 +23,11 @@ socialImage: "/media/part4.jpg"
 
 # Introduction
 
-[Part 3](/ultimate-go-react-development-setup-with-docker-part3) was about an API development workflow that involved seeding and migrations. This post covers that API's implementation and how I wrapped docker tooling around it. My API is an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I added cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. Similar to Part 1, running the API container allows live reloading, but now this behavior is optional. This tweet influenced my descision:
+[Part 3](/ultimate-go-react-development-setup-with-docker-part3) shared my updated API workflow with Docker, involving seeding and migrating a database. This post covers the API implementation and how I wrapped docker tooling around the production ready service. The API is an extension of the [Ardan Labs service example](https://github.com/ardanlabs/service). I added cors, go-migrate, testcontainers-go, a fluent SQL generator, self-signed certificates, and docker secrets. In Part 1, we could only run the API in a container but this is now optional. The following tweet influenced my decision:
 
 <blockquote class="twitter-tweet"><p lang="en" dir="ltr">Folks, keep docker out of your edit/compile/test inner loop.</p>&mdash; Dave Cheney (@davecheney) <a href="https://twitter.com/davecheney/status/1232078682287591425?ref_src=twsrc%5Etfw">February 24, 2020</a></blockquote>
 
-I read the thread and made my own interpretation: _don't tightly couple_. Making Docker opt-in ensures we never loose sight of the idomatic vision of Go. Go has convention over configuration. The moment we diverge from convention and require a non-required dependency, in order for our app to function, is the moment we loose all the integrity of our codebase.
+I read the thread and made my own interpretation: _don't tightly couple_. Optionally running the API without docker-compose ensures we never loose sight of the idiomatic vision of Go. In my case, I removed tight coupling while still enabling the use of Docker for custom development workflows, integration testing, and deployments. In sum, when moving away from the conventional use of the language, be able to defend why and understand the costs.
 
 We focus on:
 
