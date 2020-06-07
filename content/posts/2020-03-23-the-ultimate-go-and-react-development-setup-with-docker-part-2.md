@@ -55,7 +55,18 @@ The [standard built-in library](https://golang.org/pkg/) has over 100 packages a
 
 ### 6. Light-weight images
 
-Your code and its dependencies are compiled into a single static binary. Static binaries tend to be small in size. In combination with Docker you can achieve super light weight images, making Go applications great for container deployments.
+Your code and its dependencies are compiled into a single static binary. The static binary size can be reduced in size by adding additional flags to [remove debugging information](https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/), for example:
+
+```bash
+❯ go build ./cmd/api
+❯ ls -l api
+-rwxr-xr-x  1 ivorscott  staff  13035460 Jun  7 23:36 api
+❯ GOOS=linux go build -ldflags="-s -w" ./cmd/api
+❯ ls -l api
+-rwxr-xr-x  1 ivorscott  staff  9613312 Jun  7 23:36 api
+```
+
+In combination with Docker you can achieve super light weight images, making Go applications great for container deployments.
 
 ### 7. Tooling and UX
 
