@@ -43,7 +43,7 @@ Ken Thompson, Rob Pike and Robert Griesemer, are the original creators of the la
 
 ### 3. Simple Concurrency Model
 
-Concurrency is incredibly difficult to get right even when there is language support. Go has [concurrency primitives](https://www.golang-book.com/books/intro/10) called [goroutines](https://tpaschalis.github.io/goroutines-size/) and [channels](https://www.golang-book.com/books/intro/10#section2) designed for web scale. It's also one of the first modern programming languages to utilize all the cores on a multi-core machine.
+Concurrency is incredibly difficult to get right even when there is language support. Go has [concurrency primitives](https://www.golang-book.com/books/intro/10) called [goroutines](https://tpaschalis.github.io/goroutines-size/) and [channels](https://www.golang-book.com/books/intro/10#section2) designed for web scale. Go is a modern programming language that makes it easy to utilize all the cores on a multi-core machine.
 
 ### 4. Fast Compilation
 
