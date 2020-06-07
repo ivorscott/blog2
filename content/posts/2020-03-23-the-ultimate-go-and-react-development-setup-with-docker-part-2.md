@@ -55,7 +55,7 @@ The [standard built-in library](https://golang.org/pkg/) has over 100 packages a
 
 ### 6. Light-weight images
 
-Your code and its dependencies are compiled into a single static binary. The static binary size can be reduced in size by specifying the target operating system and adding additional flags to [remove debugging information](https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/), for example:
+Your code and its dependencies are compiled into a single static binary. The static binary can be reduced in size by specifying the target operating system and adding additional flags to [remove debugging information](https://blog.filippo.io/shrink-your-go-binaries-with-this-one-weird-trick/), for example:
 
 ```bash
 ❯ go build ./cmd/api
