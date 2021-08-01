@@ -34,7 +34,7 @@ module.exports = {
       github: 'ivorscott',
       twitter: 'ivorsco77',
       email: 'ivor@devpie.io',
-      cv: 'https://hire.ivorscott.com',
+      cv: '',
       art: 'https://ivorscott.com',
       rss: '',
       telegram: '',
