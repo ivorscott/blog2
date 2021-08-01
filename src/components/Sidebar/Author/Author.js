@@ -33,7 +33,7 @@ const Author = ({ author, isIndex }: Props) => (
         <Link className={styles['author__title-link']} to="/">{author.name}</Link>
       </h2>
     )}
-    <p className={styles['author__subtitle']}>{author.bio}</p>
+    <p className={styles['author__subtitle']}>{author.bio} <a style={{ color: '#222' }} href="https://hire.ivorscott.com" target="_blank">hire.ivorscott.com</a></p>
   </div>
 );
 
