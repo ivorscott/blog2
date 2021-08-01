@@ -1,43 +1,46 @@
 'use strict';
 
 module.exports = {
-  url: 'https://lumen.netlify.com',
+  url: 'https://blog.ivorscott.com',
   pathPrefix: '/',
-  title: 'Blog by John Doe',
-  subtitle: 'Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu.',
+  title: 'Tech blog',
+  subtitle: 'I design, develop, and deploy.',
   copyright: '© All rights reserved.',
-  disqusShortname: '',
+  disqusShortname: 'ivorscott',
   postsPerPage: 4,
   googleAnalyticsId: 'UA-73379983-2',
   useKatex: false,
   menu: [
     {
       label: 'Articles',
-      path: '/'
+      path: '/',
     },
     {
       label: 'About me',
-      path: '/pages/about'
+      path: '/pages/about',
     },
     {
-      label: 'Contact me',
-      path: '/pages/contacts'
-    }
+      label: 'Reading',
+      path: '/pages/reading',
+    },
   ],
   author: {
-    name: 'John Doe',
+    name: 'Ivor Scott',
     photo: '/photo.jpg',
-    bio: 'Pellentesque odio nisi, euismod in, pharetra a, ultricies in, diam. Sed arcu.',
+    bio:
+      'Freelance Software Engineer based in Berlin.',
     contacts: {
-      email: '',
-      facebook: '#',
-      telegram: '#',
-      twitter: '#',
-      github: '#',
+      linkedin: 'ivorscott',
+      github: 'ivorscott',
+      twitter: 'ivorsco77',
+      email: 'ivor@devpie.io',
+      cv: 'https://hire.ivorscott.com',
+      art: 'https://ivorscott.com',
       rss: '',
+      telegram: '',
       vkontakte: '',
-      linkedin: '#',
-      instagram: '#',
+      facebook: '',
+      instagram: '',
       line: '',
       gitlab: '',
       weibo: '',
@@ -45,6 +48,6 @@ module.exports = {
       youtube: '',
       soundcloud: '',
       medium: '',
-    }
-  }
+    },
+  },
 };

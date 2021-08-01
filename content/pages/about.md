@@ -1,13 +1,21 @@
 ---
-title: "About me"
-template: "page"
-socialImage: "/media/image-2.jpg"
+template: page
+title: About me
+draft: false
 ---
+I'm an experienced Engineer with a Masters in Fine Arts leveraging my creativity in software.
+I'm also a teaching assistant for the most comprehensive Docker course on Udemy taught by Docker Captain Bret Fisher. Don't hesitate to contact me if you require assistance in building web apps and microservices. I'm interested in working with high-performance teams or startups.
 
-Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante.
+[hire.ivorscott.com](hire.ivorscott.com)
 
-![Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi.](/media/image-2.jpg)
+### Where I've Worked
 
-*Donec eu libero sit amet quam egestas semper. Aenean ultricies mi vitae est. Mauris placerat eleifend leo. Quisque sit amet est et sapien ullamcorper pharetra. Vestibulum erat wisi, condimentum sed, commodo vitae, ornare sit amet, wisi.*
+Siemens, Axel Springer, Zalando, Mass Mutual Financial Group, Akelius
 
-Aenean fermentum, elit eget tincidunt condimentum, eros ipsum rutrum orci, sagittis tempus lacus enim ac dui. Donec non enim in turpis pulvinar facilisis. Ut felis. Praesent dapibus, neque id cursus faucibus, tortor neque egestas augue, eu vulputate magna eros eu erat. Aliquam erat volutpat. Nam dui mi, tincidunt quis, accumsan porttitor, facilisis luctus, metus
+### Things I Use
+
+Golang, TypeScript, React, Postgres
+
+Kubernetes, Docker, Traefik, AWS, Terraform, Github Actions
+
+Figma

@@ -53,6 +53,12 @@ const getIcon = (name: string) => {
     case 'medium':
       icon = ICONS.MEDIUM;
       break;
+    case 'cv':
+      icon = ICONS.CV;
+      break;
+    case 'art':
+      icon = ICONS.ART;
+      break;
     default:
       icon = {};
       break;

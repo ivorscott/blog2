@@ -104,6 +104,14 @@ module.exports = {
         plugins: [
           'gatsby-remark-relative-images',
           {
+            resolve: 'gatsby-remark-vscode',
+            // All options are optional. Defaults shown here.
+            options: {
+              theme: 'SynthWave \'84', // From package.json: contributes.themes[0].label
+              extensions: ['synthwave-vscode'], // From package.json: name
+            },
+          },
+          {
             resolve: 'gatsby-remark-katex',
             options: {
               strict: 'ignore'
@@ -239,6 +247,7 @@ module.exports = {
       }
     },
     'gatsby-plugin-flow',
-    'gatsby-plugin-optimize-svgs'
+    'gatsby-plugin-optimize-svgs',
+    'gatsby-plugin-twitter',
   ]
 };
