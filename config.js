@@ -28,7 +28,7 @@ module.exports = {
     name: 'Ivor Scott',
     photo: '/photo.jpg',
     bio:
-      'Freelance Software Engineer.',
+      'Research Scientist @ Charitè.',
     contacts: {
       linkedin: 'ivorscott',
       github: 'ivorscott',
